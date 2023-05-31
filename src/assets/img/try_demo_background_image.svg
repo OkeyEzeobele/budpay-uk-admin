@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1920.5" height="459" viewBox="0 0 1920.5 459">
+  <defs>
+    <linearGradient id="linear-gradient" x1="-0.209" y1="-0.743" x2="1.282" y2="2.381" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#8541b7"/>
+      <stop offset="1" stop-color="#54d0ed"/>
+    </linearGradient>
+  </defs>
+  <g id="try_demo_background_image" transform="translate(0.5 -4086.85)">
+    <rect id="Demo_banner" data-name="Demo banner" width="1919.5" height="459" transform="translate(-0.5 4086.85)" fill="url(#linear-gradient)"/>
+    <path id="Subtraction_8" data-name="Subtraction 8" d="M290.774,0V0h0C286.53,3.243,185.546,80.422,72.43,167.828,46.938,187.526,22.569,206.4,0,223.927V394.4H1582.646Z" transform="translate(1920 4481.25) rotate(180)" fill="#ed1938" opacity="0.15"/>
+  </g>
+</svg>
