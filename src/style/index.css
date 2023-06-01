@@ -42,7 +42,7 @@
     color: #0B093B;
   }
   a:hover {
-    color: #27ae60;
+    color: #644AE5;
   }
   input:-webkit-autofill {
     -webkit-box-shadow:0 0 0 50px #fff inset; /* Change the color to your own background color */
@@ -50,7 +50,7 @@
     -webkit-text-fill-color: #fff;
   }
   body {
-    background: #fff;
+    background: #F5F5F5;
     color: #0B093B;
     font-family: 'Khula', sans-serif;
     overflow-x: hidden;
@@ -104,8 +104,12 @@
     width: 100%;
   }
   .active {
-    border-bottom: 2px solid #27ae60;
-    color: #27ae60;
+    /* border-bottom: 2px solid #644AE5; */
+    color: #644AE5;
+  }
+  .activebg {
+    /* border-bottom: 2px solid #644AE5; */
+    color: #EEF3FE;
   }
   .tag {
     padding: 5px 10px;
@@ -243,6 +247,9 @@
   }
   .whiteColor {
     color: #fff;
+  }
+  .textColorSecondary {
+    color: #7F8184;
   }
   /* BACKGROUNDS */
   .darkBg {

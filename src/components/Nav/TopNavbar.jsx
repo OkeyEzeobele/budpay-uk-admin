@@ -10,49 +10,31 @@ import BurgerIcon from "../../assets/svg/BurgerIcon";
 
 export default function TopNavbar() {
   const [y, setY] = useState(window.scrollY);
-  const [sidebarOpen, toggleSidebar] = useState(false);
+  const [sidebarOpen, toggleSidebar] = useState(true);
+  const [backdropOpen, toggleBackdrop] = useState(false);
   const thisRoute = useLocation().pathname
 
-  useEffect(() => {
-    window.addEventListener("scroll", () => setY(window.scrollY));
-    return () => {
-      window.removeEventListener("scroll", () => setY(window.scrollY));
-    };
-  }, [y]);
+  // useEffect(() => {
+  //   window.addEventListener("scroll", () => setY(window.scrollY));
+  //   return () => {
+  //     window.removeEventListener("scroll", () => setY(window.scrollY));
+  //   };
+  // }, [y]);
 
   return (
     <>
       <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-      {sidebarOpen && <Backdrop toggleSidebar={toggleSidebar} />}
+      {sidebarOpen && window.innerWidth <= 760 &&  <Backdrop toggleSidebar={toggleSidebar} />}
       <Wrapper className="flexCenter animate whiteBg" style={y > 100 ? { height: "80px" } : { height: "100px" }}>
         <NavInner className="container flexSpaceCenter">
-            <Link className="pointer flexNullCenter" to="/" smooth={true} style={{marginLeft: 0 }} >
+            <Link className="pointer" to="/" smooth={true} style={{marginLeft: -110, paddingLeft: 0 }} >
               <LogoIcon />
             </Link>
-          <BurderWrapper className="pointer" onClick={() => toggleSidebar(!sidebarOpen)}>
+          <BorderWrapper className="pointer" onClick={() => toggleSidebar(!sidebarOpen)}>
             <BurgerIcon />
-          </BurderWrapper>
+          </BorderWrapper>
           <UlWrapper className="flexNullCenter">
-            {/* <li className="semiBold font15 pointer">
-              <Link activeClass="active" style={thisRoute ==='/blog'?{color:"#27ae60", padding: "10px 15px"}:{color:"2e3333", padding: "10px 15px"}} to="/blog" spy={true} smooth={true} offset={-80}>
-                Blog
-              </Link>
-            </li> */}
-            <li className="semiBold font15 pointer">
-              <Link activeClass="active" style={thisRoute ==='/pricing'?{color:"#27ae60", padding: "10px 15px"}:{color:"#2e3333", padding: "10px 15px"}} to="/pricing" spy={true} smooth={true} offset={-80}>
-                Pricing
-              </Link>
-            </li>
-            <li className="semiBold font15 pointer">
-              <Link activeClass="active" style={thisRoute ==='/security'?{color:"#27ae60", padding: "10px 15px"}:{color:"2e3333", padding: "10px 15px"}} to="/security" spy={true} smooth={true} offset={-80}>
-                Security
-              </Link>
-            </li>
-            <li className="semiBold font15 pointer">
-              <Link activeClass="active" style={thisRoute ==='/help-center'?{color:"#27ae60", padding: "10px 15px"}:{color:"2e3333", padding: "10px 15px"}} to="/help-center" spy={true} smooth={true} offset={-80}>
-                Help Center
-              </Link>
-            </li>
+          <></>
           </UlWrapper>
         </NavInner>
       </Wrapper>
@@ -66,13 +48,13 @@ const Wrapper = styled.nav`
   top: 0;
   left: 0;
   z-index: 999;
-  border-bottom: 1px solid ;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 `;
 const NavInner = styled.div`
   position: relative;
   height: 100%;
 `
-const BurderWrapper = styled.button`
+const BorderWrapper = styled.button`
   outline: none;
   border: 0px;
   background-color: transparent;
