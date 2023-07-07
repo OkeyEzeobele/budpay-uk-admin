@@ -10,12 +10,15 @@ import Cards from "./screens/Cards.jsx";
 import Customers from "./screens/Customers.jsx";
 import Support from "./screens/Support.jsx";
 import Settings from "./screens/Settings.jsx";
+import CustomerDetails from "./screens/CustomerDetails.jsx";
+import AmlCompliance from "./screens/AmlCompliance.jsx";
+import JumioCompliance from "./screens/JumioCompliance.jsx";
 
 export default function App() {
   return (
     <Router>
       <div className="App">
-        <Helmet>
+        {/* <Helmet>
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
           <link
@@ -23,7 +26,7 @@ export default function App() {
             rel="stylesheet"
           />
           `
-        </Helmet>
+        </Helmet> */}
         <Routes>
           <Route exact path="/" element={<Landing />}></Route>
           <Route exact path="/transactions" element={<Transactions />}></Route>
@@ -33,6 +36,10 @@ export default function App() {
           <Route exact path="/customers" element={<Customers />}></Route>
           <Route exact path="/support" element={<Support />}></Route>
           <Route exact path="/settings" element={<Settings />}></Route>
+          <Route exact path="/customers/details/:id" element={<CustomerDetails />} />
+          <Route exact path="/customers/details/:id/aml-compliance" element={<AmlCompliance />} />
+          <Route exact path="/customers/details/:id/jumio-compliance" element={<JumioCompliance />} />
+
         </Routes>
       </div>
     </Router>

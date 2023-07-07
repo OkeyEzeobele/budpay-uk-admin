@@ -2,7 +2,16 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { Link, useLocation } from "react-router-dom";
 import { NavLink } from "react-router-dom";
-import { Element3, Graph, MoneyRecive, EmptyWallet, Card, Profile2User, Like1, Setting2} from "iconsax-react";
+import {
+  Element3,
+  Graph,
+  MoneyRecive,
+  EmptyWallet,
+  Card,
+  Profile2User,
+  Like1,
+  Setting2,
+} from "iconsax-react";
 
 // Assets
 // import CloseIcon from "../../assets/svg/CloseIcon";
@@ -47,7 +56,9 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
               {selected === "/" ? (
                 <Element3
                   size={20}
-                  variant={selected === "/" || hoveredLink === '/' ? "Bold" : undefined}
+                  variant={
+                    selected === "/" || hoveredLink === "/" ? "Bold" : undefined
+                  }
                   style={{
                     marginRight: "10px",
                     verticalAlign: "middle",
@@ -62,7 +73,11 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
                     verticalAlign: "middle",
                     marginBottom: "2px",
                   }}
-                  color={selected === "/" || hoveredLink === '/' ? "#644AE5" : "#7f8184"}
+                  color={
+                    selected === "/" || hoveredLink === "/"
+                      ? "#644AE5"
+                      : "#7f8184"
+                  }
                 />
               )}
               <span className="boldText coloredText">Insights</span>
@@ -78,7 +93,9 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
           smooth={true}
           offset={-60}
         >
-          <StyledLi className={selected === "/transactions" ? "activeLink" : ""}>
+          <StyledLi
+            className={selected === "/transactions" ? "activeLink" : ""}
+          >
             <div
               style={{
                 display: "flex",
@@ -89,7 +106,12 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
               {selected === "/transactions" ? (
                 <Graph
                   size={20}
-                  variant={selected === "/transactions" || hoveredLink === '/transactions' ? "Bold" : undefined}
+                  variant={
+                    selected === "/transactions" ||
+                    hoveredLink === "/transactions"
+                      ? "Bold"
+                      : undefined
+                  }
                   style={{
                     marginRight: "10px",
                     verticalAlign: "middle",
@@ -104,7 +126,12 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
                     verticalAlign: "middle",
                     marginBottom: "2px",
                   }}
-                  color={selected === "/transactions" || hoveredLink === '/transactions' ? "#644AE5" : "#7f8184"}
+                  color={
+                    selected === "/transactions" ||
+                    hoveredLink === "/transactions"
+                      ? "#644AE5"
+                      : "#7f8184"
+                  }
                 />
               )}
               <span className="boldText coloredText">Transactions</span>
@@ -131,7 +158,11 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
               {selected === "/revenue" ? (
                 <MoneyRecive
                   size={20}
-                  variant={selected === "/revenue" || hoveredLink === '/revenue' ? "Bold" : undefined}
+                  variant={
+                    selected === "/revenue" || hoveredLink === "/revenue"
+                      ? "Bold"
+                      : undefined
+                  }
                   style={{
                     marginRight: "10px",
                     verticalAlign: "middle",
@@ -146,7 +177,11 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
                     verticalAlign: "middle",
                     marginBottom: "2px",
                   }}
-                  color={selected === "/revenue" || hoveredLink === '/revenue' ? "#644AE5" : "#7f8184"}
+                  color={
+                    selected === "/revenue" || hoveredLink === "/revenue"
+                      ? "#644AE5"
+                      : "#7f8184"
+                  }
                 />
               )}
               <span className="boldText coloredText">Revenue</span>
@@ -173,7 +208,11 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
               {selected === "/wallet" ? (
                 <EmptyWallet
                   size={20}
-                  variant={selected === "/wallet" || hoveredLink === '/wallet' ? "Bold" : undefined}
+                  variant={
+                    selected === "/wallet" || hoveredLink === "/wallet"
+                      ? "Bold"
+                      : undefined
+                  }
                   style={{
                     marginRight: "10px",
                     verticalAlign: "middle",
@@ -188,7 +227,11 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
                     verticalAlign: "middle",
                     marginBottom: "2px",
                   }}
-                  color={selected === "/wallet" || hoveredLink === '/wallet' ? "#644AE5" : "#7f8184"}
+                  color={
+                    selected === "/wallet" || hoveredLink === "/wallet"
+                      ? "#644AE5"
+                      : "#7f8184"
+                  }
                 />
               )}
               <span className="boldText coloredText">Wallet</span>
@@ -215,7 +258,11 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
               {selected === "/cards" ? (
                 <Card
                   size={20}
-                  variant={selected === "/cards" || hoveredLink === '/cards' ? "Bold" : undefined}
+                  variant={
+                    selected === "/cards" || hoveredLink === "/cards"
+                      ? "Bold"
+                      : undefined
+                  }
                   style={{
                     marginRight: "10px",
                     verticalAlign: "middle",
@@ -230,7 +277,11 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
                     verticalAlign: "middle",
                     marginBottom: "2px",
                   }}
-                  color={selected === "/cards" || hoveredLink === '/cards' ? "#644AE5" : "#7f8184"}
+                  color={
+                    selected === "/cards" || hoveredLink === "/cards"
+                      ? "#644AE5"
+                      : "#7f8184"
+                  }
                 />
               )}
               <span className="boldText coloredText">Cards</span>
@@ -241,12 +292,18 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
           onMouseEnter={() => setHoveredLink("/customers")}
           onMouseLeave={() => setHoveredLink(null)}
           to="/customers"
-          className={`link ${selected === "/customers" ? "activeLink" : ""}`}
+          className={`link ${
+            selected && selected.includes("customers") ? "activeLink" : ""
+          }`}
           spy={true}
           smooth={true}
           offset={-60}
         >
-          <StyledLi className={selected === "/customers" ? "activeLink" : ""}>
+          <StyledLi
+            className={
+              selected && selected.includes("customers") ? "activeLink" : ""
+            }
+          >
             <div
               style={{
                 display: "flex",
@@ -254,10 +311,15 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
                 padding: "15px 15px",
               }}
             >
-              {selected === "/customers" ? (
+              {selected && selected.includes("customers") ? (
                 <Profile2User
                   size={20}
-                  variant={selected === "/customers" || hoveredLink === '/customers' ? "Bold" : undefined}
+                  variant={
+                    selected.includes("customers") ||
+                    (hoveredLink && hoveredLink.includes("customers"))
+                      ? "Bold"
+                      : undefined
+                  }
                   style={{
                     marginRight: "10px",
                     verticalAlign: "middle",
@@ -272,13 +334,19 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
                     verticalAlign: "middle",
                     marginBottom: "2px",
                   }}
-                  color={selected === "/customers" || hoveredLink === '/customers' ? "#644AE5" : "#7f8184"}
+                  color={
+                    (selected && selected.includes("customers")) ||
+                    (hoveredLink && hoveredLink.includes("customers"))
+                      ? "#644AE5"
+                      : "#7f8184"
+                  }
                 />
               )}
               <span className="boldText coloredText">Customers</span>
             </div>
           </StyledLi>
         </NavLink>
+
         <NavLink
           onMouseEnter={() => setHoveredLink("/support")}
           onMouseLeave={() => setHoveredLink(null)}
@@ -299,7 +367,11 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
               {selected === "/support" ? (
                 <Like1
                   size={20}
-                  variant={selected === "/support" || hoveredLink === '/support' ? "Bold" : undefined}
+                  variant={
+                    selected === "/support" || hoveredLink === "/support"
+                      ? "Bold"
+                      : undefined
+                  }
                   style={{
                     marginRight: "10px",
                     verticalAlign: "middle",
@@ -314,7 +386,11 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
                     verticalAlign: "middle",
                     marginBottom: "2px",
                   }}
-                  color={selected === "/support" || hoveredLink === '/support' ? "#644AE5" : "#7f8184"}
+                  color={
+                    selected === "/support" || hoveredLink === "/support"
+                      ? "#644AE5"
+                      : "#7f8184"
+                  }
                 />
               )}
               <span className="boldText coloredText">Support</span>
@@ -341,7 +417,11 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
               {selected === "/settings" ? (
                 <Setting2
                   size={20}
-                  variant={selected === "/settings" || hoveredLink === '/settings' ? "Bold" : undefined}
+                  variant={
+                    selected === "/settings" || hoveredLink === "/settings"
+                      ? "Bold"
+                      : undefined
+                  }
                   style={{
                     marginRight: "10px",
                     verticalAlign: "middle",
@@ -356,7 +436,11 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
                     verticalAlign: "middle",
                     marginBottom: "2px",
                   }}
-                  color={selected === "/settings" || hoveredLink === '/settings' ? "#644AE5" : "#7f8184"}
+                  color={
+                    selected === "/settings" || hoveredLink === "/settings"
+                      ? "#644AE5"
+                      : "#7f8184"
+                  }
                 />
               )}
               <span className="boldText coloredText">Settings</span>
@@ -376,7 +460,7 @@ const Wrapper = styled.nav`
   padding: 0;
   background-color: #ffffff;
   left: ${(props) => (props.sidebarOpen ? "0px" : "-400px")};
-  z-index: 9999;
+  z-index: 999;
   border-right: 1px solid rgba(0, 0, 0, 0.1);
   @media (max-width: 400px) {
     width: 100%;
@@ -418,7 +502,7 @@ const StyledLi = styled.li`
     }
   }
   .boldText {
-    font-weight: 400;
+    font-weight: bold;
   }
 `;
 
