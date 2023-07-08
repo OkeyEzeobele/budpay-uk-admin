@@ -394,21 +394,21 @@ export default function CustomerDetails() {
                                   <CardContentWrapper>
                                     <Row2>
                                       <HeaderText>First Name</HeaderText>
-                                      <RegularText>Joe</RegularText>
+                                      <RegularText>{basicInfo.fullName.split(" ")[0]}</RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Last Name</HeaderText>
-                                      <RegularText>Wilson</RegularText>
+                                      <RegularText>{basicInfo.fullName.split(" ")[1]}</RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Email Address</HeaderText>
                                       <RegularText>
-                                        joewilson@gmail.com
+                                        {basicInfo.emailAddress}
                                       </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Phone Number</HeaderText>
-                                      <RegularText>2348123456789</RegularText>
+                                      <RegularText>{basicInfo.phoneNumber}</RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Date of Birth</HeaderText>

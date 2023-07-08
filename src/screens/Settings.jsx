@@ -1,109 +1,581 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Add, Edit2, Trash, Clock, ArrowDown2 } from "iconsax-react";
+import api from "../api";
+import { ToastContainer, toast } from "react-toastify";
+import {
+  Add,
+  Edit2,
+  Trash,
+  Clock,
+  ArrowDown2,
+  CloseCircle,
+} from "iconsax-react";
+import PuffLoader from "react-spinners/PuffLoader";
+import Modal from "react-modal";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import ReactCountryFlag from "react-country-flag";
 //Sections
 import TopNavbar from "../components/Nav/TopNavbar";
+Modal.setAppElement("#root");
 
 export default function Settings() {
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [addModalIsOpen, setAddModalIsOpen] = useState(false);
+  const [updatePoolModalIsOpen, setUpdatePoolModalIsOpen] = useState(false);
+  const [updateParamModalIsOpen, setUpdateParamModalIsOpen] = useState(false);
+  const [deleteModalIsOpen, setDeleteModalIsOpen] = useState(false);
   const [toggleState, setToggleState] = useState("Risk Factor");
   const [activeSwitch, setActiveSwitch] = useState("Risk Factor");
   const [activeCountry, setActiveCountry] = useState("United Kingdom");
+  const [riskFactorPool, setriskFactorPool] = useState([]);
+  const [accountRiskFactor, setaccountRiskFactor] = useState([]);
+  const [individualRiskFactor, setIndividualRiskFactor] = useState([]);
+  const [businessRiskFactor, setBusinessRiskFactor] = useState([]);
+  const [isPoolLoading, setIsPoolLoading] = useState(true);
+  const [isFactorLoading, setIsFactorLoading] = useState(true);
+  const [currentItem, setCurrentItem] = useState([]);
+  const [targetId, setTargetId] = useState(null);
+  const [score, setScore] = useState(0);
+  const [name, setName] = useState("");
+  const [factorId, setFactorId] = useState(0);
+  const incrementScore = () => setScore((prevScore) => prevScore + 1);
+  const decrementScore = () =>
+    setScore((prevScore) => (prevScore > 0 ? prevScore - 1 : 0));
+  useEffect(() => {
+    getriskFactorPool();
+  }, []);
+  useEffect(() => {
+    getaccountRiskFactorPool();
+  }, []);
+  // useEffect(() => {
+  //   setIsFactorLoading(isFactorLoading);
+  // }, [isFactorLoading]);
 
   const toggle = () => {
     setToggleState((prevState) =>
       prevState === "Risk Factor" ? "Compliance Review" : "Risk Factor"
     );
   };
+  const openModal = () => {
+    setModalIsOpen(true);
+  };
+  const closeModal = () => {
+    setModalIsOpen(false);
+    setName("");
+  };
+  const openAddModal = () => {
+    setAddModalIsOpen(true);
+  };
+  const closeAddModal = () => {
+    setAddModalIsOpen(false);
+    setCurrentItem([]);
+    setScore(0);
+  };
+  const openUpdateModal = () => {
+    setUpdatePoolModalIsOpen(true);
+  };
+  const closeUpdateModal = () => {
+    setUpdatePoolModalIsOpen(false);
+    setFactorId(0);
+    setName("");
+  };
+  const openUpdateParamModal = () => {
+    setUpdateParamModalIsOpen(true);
+  };
+  const closeUpdateParamModal = () => {
+    setUpdateParamModalIsOpen(false);
+    setCurrentItem([]);
+    setScore(0);
+  };
+  const openDeleteModal = () => {
+    setDeleteModalIsOpen(true);
+  };
+  const closeDeleteModal = () => {
+    setDeleteModalIsOpen(false);
+    setCurrentItem([]);
+  };
+  const setRiskFactors = (accountRiskFactor) => {
+    setBusinessRiskFactor(
+      accountRiskFactor.filter((item) => item.accountType === "Business")
+    );
+    setIndividualRiskFactor(
+      accountRiskFactor.filter((item) => item.accountType === "Individual")
+    );
+    setIsFactorLoading(false);
+  };
+  const addRiskFactorPool = async (name) => {
+    let body = {
+      channel: 1,
+      ipAddress: "string",
+      actor: 61,
+      deviceId: "string",
+      browser: "string",
+      accountId: 0,
+      name: name,
+    };
+    await api
+      .post(`/api/v2/riskfactor/create`, body, {
+        headers: {
+          accept: "*/*",
+          "X-Auth-Signature": `179C050B170DAB3BEBB98603BD05FB47EE846336F5324FC6D9C34E82792A215EB65A6BC60BB7FEA38CD6389BF4E533E01B753A9787AA7E8E62FC6FA7B018B33C`,
+          "Content-Type": "application/json",
+        },
+      })
+      .then((response) => {
+        // console.log(response);
+        if (response.data.isSuccessful === true) {
+          toast.success(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#4CBB17",
+              color: "#fff",
+            },
+          });
+          getriskFactorPool();
+        } else {
+          toast.error(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#f44336",
+              color: "#fff",
+            },
+          });
+        }
+        setIsPoolLoading(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsPoolLoading(false);
+      });
+  };
+  const updateRiskFactorPool = async (name, id) => {
+    let body = {
+      channel: 1,
+      ipAddress: "string",
+      actor: 61,
+      deviceId: "string",
+      browser: "string",
+      accountId: 0,
+      id: id,
+      name: name,
+    };
+    await api
+      .post(`/api/v2/riskfactor/update`, body, {
+        headers: {
+          accept: "*/*",
+          "X-Auth-Signature": `179C050B170DAB3BEBB98603BD05FB47EE846336F5324FC6D9C34E82792A215EB65A6BC60BB7FEA38CD6389BF4E533E01B753A9787AA7E8E62FC6FA7B018B33C`,
+          "Content-Type": "application/json",
+        },
+      })
+      .then((response) => {
+        // console.log(response);
+        if (response.data.isSuccessful === true) {
+          toast.success(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#4CBB17",
+              color: "#fff",
+            },
+          });
+          getriskFactorPool();
+        } else {
+          toast.error(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#f44336",
+              color: "#fff",
+            },
+          });
+        }
+        setIsPoolLoading(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsPoolLoading(false);
+      });
+  };
+  const addAccountRiskFactorPool = async (id, factor, type) => {
+    let body = {
+      channel: 1,
+      ipAddress: "string",
+      actor: 61,
+      deviceId: "string",
+      browser: "string",
+      accountId: 0,
+      subsidiaryCode: "GB",
+      riskParameters: [
+        {
+          riskFactorId: id,
+          weightingFactor: factor,
+          accountType: type,
+        },
+      ],
+    };
+    await api
+      .post(`/api/v2/riskparameter/create`, body, {
+        headers: {
+          accept: "*/*",
+          "X-Auth-Signature": `179C050B170DAB3BEBB98603BD05FB47EE846336F5324FC6D9C34E82792A215EB65A6BC60BB7FEA38CD6389BF4E533E01B753A9787AA7E8E62FC6FA7B018B33C`,
+          "Content-Type": "application/json",
+        },
+      })
+      .then((response) => {
+        // console.log(response);
+        if (response.data.isSuccessful === true) {
+          toast.success(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#4CBB17",
+              color: "#fff",
+            },
+          });
+          getaccountRiskFactorPool();
+        } else {
+          setIsFactorLoading(false);
+          toast.error(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#f44336",
+              color: "#fff",
+            },
+          });
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsFactorLoading(false);
+      });
+  };
+  const updateAccountRiskFactorPool = async (id, factor, type) => {
+    let body = {
+      channel: 1,
+      ipAddress: "string",
+      actor: 61,
+      deviceId: "string",
+      browser: "string",
+      accountId: 0,
+      subsidiaryCode: "gb",
+      riskFactorId: id,
+      weightingFactor: factor,
+      accountType: type,
+    };
+    await api
+      .post(`/api/v2/riskparameter/update`, body, {
+        headers: {
+          accept: "*/*",
+          "X-Auth-Signature": `179C050B170DAB3BEBB98603BD05FB47EE846336F5324FC6D9C34E82792A215EB65A6BC60BB7FEA38CD6389BF4E533E01B753A9787AA7E8E62FC6FA7B018B33C`,
+          "Content-Type": "application/json",
+        },
+      })
+      .then((response) => {
+        // console.log(response);
+        if (response.data.isSuccessful === true) {
+          toast.success(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#4CBB17",
+              color: "#fff",
+            },
+          });
+          getaccountRiskFactorPool();
+        } else {
+          setIsFactorLoading(false);
+          toast.error(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#f44336",
+              color: "#fff",
+            },
+          });
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsFactorLoading(false);
+      });
+  };
+  const getriskFactorPool = async () => {
+    setIsPoolLoading(true);
+    let body = {
+      channel: 1,
+      ipAddress: "string",
+      actor: 61,
+      deviceId: "string",
+      browser: "string",
+      accountId: 0,
+    };
+    await api
+      .post(`/api/v2/riskfactor/get`, body, {
+        headers: {
+          accept: "*/*",
+          "X-Auth-Signature": `179C050B170DAB3BEBB98603BD05FB47EE846336F5324FC6D9C34E82792A215EB65A6BC60BB7FEA38CD6389BF4E533E01B753A9787AA7E8E62FC6FA7B018B33C`,
+          "Content-Type": "application/json",
+        },
+      })
+      .then((response) => {
+        // console.log(response);
+        if (response.data.isSuccessful === true) {
+          setriskFactorPool(response.data.returnedObjects);
+        } else {
+          toast.error(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#f44336",
+              color: "#fff",
+            },
+          });
+        }
+        setIsPoolLoading(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsPoolLoading(false);
+      });
+  };
+  const getaccountRiskFactorPool = async () => {
+    let body = {
+      channel: 1,
+      ipAddress: "string",
+      actor: 61,
+      deviceId: "string",
+      browser: "string",
+      accountId: 82,
+      subsidiaryCode: "gb",
+    };
+    await api
+      .post(`/api/v2/riskparameter/get`, body, {
+        headers: {
+          accept: "*/*",
+          "X-Auth-Signature": `179C050B170DAB3BEBB98603BD05FB47EE846336F5324FC6D9C34E82792A215EB65A6BC60BB7FEA38CD6389BF4E533E01B753A9787AA7E8E62FC6FA7B018B33C`,
+          "Content-Type": "application/json",
+        },
+      })
+      .then((response) => {
+        // console.log(response);
+        if (response.data.isSuccessful === true) {
+          setaccountRiskFactor(response.data.returnedObjects);
+          setRiskFactors(response.data.returnedObjects);
+        } else {
+          setIsFactorLoading(false);
+          toast.error(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#f44336",
+              color: "#fff",
+            },
+          });
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsFactorLoading(false);
+      });
+  };
+  const deleteRiskFactorPool = async (id) => {
+    await api
+      .get(`/api/v2/riskfactor/delete/${id}`, {
+        headers: {
+          accept: "*/*",
+          "X-Auth-Signature": `179C050B170DAB3BEBB98603BD05FB47EE846336F5324FC6D9C34E82792A215EB65A6BC60BB7FEA38CD6389BF4E533E01B753A9787AA7E8E62FC6FA7B018B33C`,
+          "Content-Type": "application/json",
+        },
+      })
+      .then((response) => {
+        // console.log(response);
+        if (response.data.isSuccessful === true) {
+          toast.success(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#4CBB17",
+              color: "#fff",
+            },
+          });
+          getriskFactorPool();
+        } else {
+          toast.error(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#f44336",
+              color: "#fff",
+            },
+          });
+        }
+        setIsPoolLoading(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsPoolLoading(false);
+      });
+  };
   var myString = "(x<=30)";
   var myString2 = "(30 < x <= 60)";
   var myString3 = "(60 < x <= 100)";
-  const riskFactorsMain = [
-    {
-      factor: "Presence of PEP",
-      isDefault: true,
+  const customStyles = {
+    content: {
+      top: "50%",
+      left: "50%",
+      right: "auto",
+      bottom: "auto",
+      marginRight: "-50%",
+      transform: "translate(-50%, -50%)",
+      width: "35%",
+      height: "48%",
+      borderRadius: "15px",
     },
-    {
-      factor: "Profession",
-      isDefault: true,
-    },
-    {
-      factor: "Country of Origin",
-      isDefault: true,
-    },
-    {
-      factor: "Country of Tax Residence/Domicile",
-      isDefault: true,
-    },
-    {
-      factor: "Business Sector",
-      isDefault: true,
-    },
-    {
-      factor: "UBO Business Sector",
-      isDefault: true,
-    },
-    {
-      factor: "Screening Hit",
-      isDefault: true,
-    },
-    { factor: "Beneficial Owner is a PEP?", isDefault: false },
-    {
-      factor: "Company engaged in activities requiring a lot of cash",
-      isDefault: false,
-    },
-    { factor: "Ownership Structure", isDefault: false },
-    { factor: "Source of funds", isDefault: false },
-  ];
-  const riskFactors = [
-    {
-      factor: "Expected Value / Vol of Transactions 50>x<500",
-      isDefault: true,
-    },
-    {
-      factor: "Expected Value / Vol of Transactions 100>x<2000",
-      isDefault: true,
-    },
-    {
-      factor: "Expected Value / Vol of Transactions 100>x<5000",
-      isDefault: true,
-    },
-    { factor: "Presence of PEP", isDefault: false },
-    { factor: "Profession", isDefault: false },
-    { factor: "Country of Origin of Customer", isDefault: false },
-    { factor: "Source of funds", isDefault: false },
-    { factor: "Adverse Media Presence", isDefault: false },
-    { factor: "Beneficial Owner is a PEP?", isDefault: false },
-    { factor: "Ownership Structure", isDefault: false },
-  ];
-  const riskFactorsBusiness = [
-    {
-      factor: "Date of Incorporation < 5",
-      isDefault: true,
-    },
-    {
-      factor: "Date of Incorporation > 5",
-      isDefault: true,
-    },
-    {
-      factor: "Expected Value / Vol of Transactions 50>x<500",
-      isDefault: true,
-    },
-    {
-      factor: "Expected Value / Vol of Transactions 100>x<2000",
-      isDefault: true,
-    },
-    {
-      factor: "Expected Value / Vol of Transactions 100>x<5000",
-      isDefault: true,
-    },
-    { factor: "UBO Business Sector", isDefault: false },
-    { factor: "Country of Origin", isDefault: false },
-    { factor: "Adverse Media Presence", isDefault: false },
-    { factor: "Beneficial Owner is a PEP?", isDefault: false },
-    { factor: "Ownership Structure", isDefault: false },
-    { factor: "Source of Funds", isDefault: false },
-  ];
+  };
+
+  const ItemTypes = { CARD: "card" };
+
+  function handleDrop(item, targetId) {
+    setCurrentItem(item);
+    openAddModal();
+    setTargetId(targetId);
+  }
+
+  const DraggableListCard2 = ({ item, index }) => {
+    const [{ isDragging }, dragRef] = useDrag({
+      type: "card",
+      item: item,
+      collect: (monitor) => ({
+        isDragging: !!monitor.isDragging(),
+      }),
+    });
+    return (
+      <ListCard2 ref={dragRef} key={index}>
+        <CardText>{item.name}</CardText>
+
+        <div
+          style={{
+            width: "12%",
+            justifyContent: "space-between",
+            alignItems: "end",
+            display: "flex",
+          }}
+        >
+          <Edit2
+            size="12"
+            color="#000"
+            onClick={() => {
+              openUpdateModal();
+              setName(item.name);
+              setFactorId(item.id);
+            }}
+            cursor={"pointer"}
+          />
+          <Trash
+            size="12"
+            color="#000"
+            onClick={() => {
+              openDeleteModal();
+              setCurrentItem(item);
+            }}
+            cursor={"pointer"}
+          />
+        </div>
+      </ListCard2>
+    );
+  };
+  const DropableColumn = ({ onDrop, children, id, ...props }) => {
+    const [{ isOver }, dropRef] = useDrop({
+      accept: "card",
+      drop: (item) => onDrop(item, id),
+      collect: (monitor) => ({
+        isOver: !!monitor.isOver(),
+      }),
+    });
+
+    return (
+      <ListColumn ref={dropRef} {...props}>
+        {children}
+      </ListColumn>
+    );
+  };
+
   function renderRiskFactor() {
     if (activeCountry === "United Kingdom") {
       return (
@@ -114,53 +586,105 @@ export default function Settings() {
               <Row>
                 <HeaderText2>Individual Account Risk Factor</HeaderText2>
               </Row>
-              <ListColumn>
-                {riskFactors.map((item, index) => (
-                  <ListCard key={index} isDefault={item.isDefault}>
-                    <CardText>{item.factor}</CardText>
-
-                    <CardText2>
-                      {item.isDefault && (
-                        <DefaultWrapper>
-                          <span> Default</span>
-                        </DefaultWrapper>
-                      )}
-                    </CardText2>
-                    <span>
-                      <Row>
-                        <Edit2 size="9" color="#000" />
-                        <Trash size="9" color="#000" />
-                      </Row>
-                    </span>
-                  </ListCard>
-                ))}
-              </ListColumn>
+              {isFactorLoading ? (
+                <LoaderContainer>
+                  <PuffLoader
+                    color="#644AE5"
+                    loading={isFactorLoading}
+                    size={100}
+                  />
+                </LoaderContainer>
+              ) : individualRiskFactor.length == 0 ? (
+                <DropableColumn
+                  id="Individual"
+                  onDrop={(item) => handleDrop(item, "Individual")}
+                >
+                  <h4>No Risk Factors Have Been Defined </h4>
+                </DropableColumn>
+              ) : (
+                <DropableColumn
+                  id="Individual"
+                  onDrop={(item) => handleDrop(item, "Individual")}
+                >
+                  {individualRiskFactor.map((item, index) => (
+                    <ListCard key={index}>
+                      <CardText>{item.name}</CardText>
+                      <div
+                        style={{
+                          width: "12%",
+                          justifyContent: "space-between",
+                          alignItems: "end",
+                          display: "flex",
+                        }}
+                      >
+                        <Edit2
+                          size="12"
+                          color="#000"
+                          onClick={() => {
+                            setCurrentItem(item);
+                            openUpdateParamModal();
+                            setScore(item.weight);
+                          }}
+                          cursor={"pointer"}
+                        />
+                        <Trash size="12" color="#000" />
+                      </div>
+                    </ListCard>
+                  ))}
+                </DropableColumn>
+              )}
             </InnerCard>
             <InnerCard>
               <Row>
                 <HeaderText2>Business Account Risk Factor</HeaderText2>
               </Row>
-              <ListColumn>
-                {riskFactorsBusiness.map((item, index) => (
-                  <ListCard key={index} isDefault={item.isDefault}>
-                    <CardText>{item.factor}</CardText>
-
-                    <CardText2>
-                      {item.isDefault && (
-                        <DefaultWrapper>
-                          <span> Default</span>
-                        </DefaultWrapper>
-                      )}
-                    </CardText2>
-                    <span>
-                      <Row>
-                        <Edit2 size="9" color="#000" />
-                        <Trash size="9" color="#000" />
-                      </Row>
-                    </span>
-                  </ListCard>
-                ))}
-              </ListColumn>
+              {isFactorLoading ? (
+                <LoaderContainer>
+                  <PuffLoader
+                    color="#644AE5"
+                    loading={isFactorLoading}
+                    size={100}
+                  />
+                </LoaderContainer>
+              ) : businessRiskFactor.length == 0 ? (
+                <DropableColumn
+                  id="Business"
+                  onDrop={(item) => handleDrop(item, "Business")}
+                >
+                  <h4>No Risk Factors Have Been Defined </h4>
+                </DropableColumn>
+              ) : (
+                <DropableColumn
+                  id="Business"
+                  onDrop={(item) => handleDrop(item, "Business")}
+                >
+                  {businessRiskFactor.map((item, index) => (
+                    <ListCard key={index}>
+                      <CardText>{item.name}</CardText>
+                      <div
+                        style={{
+                          width: "12%",
+                          justifyContent: "space-between",
+                          alignItems: "end",
+                          display: "flex",
+                        }}
+                      >
+                        <Edit2
+                          size="12"
+                          color="#000"
+                          onClick={() => {
+                            setCurrentItem(item);
+                            openUpdateParamModal();
+                            setScore(item.weight);
+                          }}
+                          cursor={"pointer"}
+                        />
+                        <Trash size="12" color="#000" />
+                      </div>
+                    </ListCard>
+                  ))}
+                </DropableColumn>
+              )}
             </InnerCard>
           </InnerRow>
         </Column>
@@ -170,433 +694,1051 @@ export default function Settings() {
   return (
     <>
       <TopNavbar />
-      <ScrollableContainer>
-        <ResponsiveWrapper>
-          <Container>
-            <Card3>
-              <SwitchWrapper>
-                <SwitchColumn>
-                  <SwitchText
-                    active={activeSwitch === "Risk Factor"}
-                    onClick={() => setActiveSwitch("Risk Factor")}
-                  >
-                    Risk Factor
-                  </SwitchText>
-                  <Highlight1 active={activeSwitch} />
-                </SwitchColumn>
-                <SwitchColumn>
-                  <SwitchText
-                    active={activeSwitch === "Compliance Review"}
-                    onClick={() => setActiveSwitch("Compliance Review")}
-                  >
-                    Compliance Review
-                  </SwitchText>
-                  <Highlight2 active={activeSwitch} />
-                </SwitchColumn>
-              </SwitchWrapper>
-            </Card3>
-            <Row>
-              {activeSwitch === "Risk Factor" ? (
-                <Container>
-                  <Row>
-                    <CardTitleTextBig>Country Risk Factor</CardTitleTextBig>
-                    <Buttons>
-                      <Add size="24" color="#fff" />
-                      Add New
-                    </Buttons>
-                  </Row>
-                  <Row>
-                    <LeftCard>
-                      <Row>
+      <ToastContainer />
+      <Modal
+        isOpen={modalIsOpen}
+        onRequestClose={closeModal}
+        style={customStyles}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: "100%",
+            height: "80%",
+            padding: "20px 10px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              width: "100%",
+            }}
+          >
+            <CloseCircle size="24" color="#BCBEC0" onClick={closeModal} />
+          </div>
+
+          <h2>Add New Risk Factor Pool</h2>
+          <Row></Row>
+
+          <form
+            style={{
+              width: "80%",
+              paddingBottom: "20px",
+            }}
+            onSubmit={(event) => {
+              setIsFactorLoading(true);
+              event.preventDefault();
+              addRiskFactorPool(name);
+              setName("");
+              closeModal();
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+                marginBottom: "20px",
+              }}
+            >
+              <label>Risk Factor</label>
+              <input
+                type="text"
+                name="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                style={{
+                  height: "35px",
+                  width: "100%",
+                  border: "1px solid #BCBEC0",
+                  backgroundColor: "#F4F6F8",
+                  borderRadius: "5px",
+                  padding: "5px",
+                }}
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+              }}
+            >
+              <input
+                type="submit"
+                value="Add New"
+                style={{
+                  backgroundColor: "#6243ED",
+                  color: "white",
+                  fontWeight: "bold",
+                  padding: "10px",
+                  border: "none",
+                  borderRadius: "5px",
+                  height: "50px",
+                }}
+              />
+            </div>
+          </form>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={addModalIsOpen}
+        onRequestClose={closeAddModal}
+        style={customStyles}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: "100%",
+            height: "80%",
+            padding: "20px 10px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              width: "100%",
+            }}
+          >
+            <CloseCircle size="24" color="#BCBEC0" onClick={closeAddModal} />
+          </div>
+
+          <h2>Add New Risk Factor for {targetId}</h2>
+          <Row></Row>
+          <form
+            style={{
+              width: "80%",
+              paddingBottom: "20px",
+            }}
+            onSubmit={(event) => {
+              let type = 0;
+              if (targetId === "Individual") {
+                type = 1;
+              } else {
+                type = 2;
+              }
+              setIsFactorLoading(true);
+              event.preventDefault();
+              addAccountRiskFactorPool(currentItem.id, score, type);
+              setCurrentItem([]);
+              setScore(0);
+              closeAddModal();
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+                marginBottom: "20px",
+              }}
+            >
+              <label>Risk Factor</label>
+              <input
+                type="text"
+                name="name"
+                readOnly
+                value={currentItem.name}
+                onChange={(e) => setName(e.target.value)}
+                style={{
+                  height: "35px",
+                  width: "100%",
+                  border: "1px solid #BCBEC0",
+                  backgroundColor: "#F4F6F8",
+                  borderRadius: "5px",
+                  padding: "5px",
+                }}
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                marginBottom: "20px",
+              }}
+            >
+              <label>Weighted Score</label>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  width: "50%",
+                }}
+              >
+                <div
+                  type="button"
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    width: "25px",
+                    height: "25px",
+                    borderRadius: "15px",
+                    backgroundColor: "#F4F6F8",
+                    border: "1px solid #BCBEC0",
+                    cursor: "pointer",
+                  }}
+                  onClick={decrementScore}
+                >
+                  -
+                </div>
+
+                <input
+                  type="text"
+                  name="score"
+                  value={score}
+                  readOnly
+                  style={{
+                    height: "35px",
+                    width: "50%",
+                    border: "1px solid #BCBEC0",
+                    backgroundColor: "#F4F6F8",
+                    borderRadius: "5px",
+                    padding: "5px",
+                    textAlign: "center",
+                  }}
+                />
+                <div
+                  type="button"
+                  style={{
+                    cursor: "pointer",
+                    display: "flex",
+                    justifyContent: "center",
+                    width: "25px",
+                    height: "25px",
+                    borderRadius: "15px",
+                    backgroundColor: "#F4F6F8",
+                    border: "1px solid #BCBEC0",
+                  }}
+                  onClick={incrementScore}
+                >
+                  +
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+              }}
+            >
+              <input
+                type="submit"
+                value="Add New"
+                style={{
+                  backgroundColor: "#6243ED",
+                  color: "white",
+                  fontWeight: "bold",
+                  padding: "10px",
+                  border: "none",
+                  borderRadius: "5px",
+                  height: "50px",
+                }}
+              />
+            </div>
+          </form>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={updatePoolModalIsOpen}
+        onRequestClose={closeUpdateModal}
+        style={customStyles}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: "100%",
+            height: "80%",
+            padding: "20px 10px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              width: "100%",
+            }}
+          >
+            <CloseCircle size="24" color="#BCBEC0" onClick={closeUpdateModal} />
+          </div>
+
+          <h2>Update Risk Factor Pool</h2>
+          <Row></Row>
+
+          <form
+            style={{
+              width: "80%",
+              paddingBottom: "20px",
+            }}
+            onSubmit={(event) => {
+              setIsPoolLoading(true);
+              event.preventDefault();
+              updateRiskFactorPool(name, factorId);
+              setName("");
+              setFactorId(0);
+              closeUpdateModal();
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+                marginBottom: "20px",
+              }}
+            >
+              <label>Risk Factor</label>
+              <input
+                type="text"
+                name="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                style={{
+                  height: "35px",
+                  width: "100%",
+                  border: "1px solid #BCBEC0",
+                  backgroundColor: "#F4F6F8",
+                  borderRadius: "5px",
+                  padding: "5px",
+                }}
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+              }}
+            >
+              <input
+                type="submit"
+                value="Update"
+                style={{
+                  backgroundColor: "#6243ED",
+                  color: "white",
+                  fontWeight: "bold",
+                  padding: "10px",
+                  border: "none",
+                  borderRadius: "5px",
+                  height: "50px",
+                }}
+              />
+            </div>
+          </form>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={updateParamModalIsOpen}
+        onRequestClose={closeUpdateParamModal}
+        style={customStyles}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: "100%",
+            height: "80%",
+            padding: "20px 10px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              width: "100%",
+            }}
+          >
+            <CloseCircle
+              size="24"
+              color="#BCBEC0"
+              onClick={closeUpdateParamModal}
+            />
+          </div>
+
+          <h2>Update Risk Factor</h2>
+          <Row></Row>
+
+          <form
+            style={{
+              width: "80%",
+              paddingBottom: "20px",
+            }}
+            onSubmit={(event) => {
+              let type = 0;
+              if (currentItem.accountType === "Individual") {
+                type = 1;
+              } else {
+                type = 2;
+              }
+              setIsFactorLoading(true);
+              event.preventDefault();
+              updateAccountRiskFactorPool(
+                currentItem.riskFactorId,
+                score,
+                type
+              );
+              setCurrentItem([]);
+              closeUpdateParamModal();
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+                marginBottom: "20px",
+              }}
+            >
+              <label>Risk Factor</label>
+              <input
+                type="text"
+                name="name"
+                readOnly
+                value={currentItem.name}
+                onChange={(e) => setName(e.target.value)}
+                style={{
+                  height: "35px",
+                  width: "100%",
+                  border: "1px solid #BCBEC0",
+                  backgroundColor: "#F4F6F8",
+                  borderRadius: "5px",
+                  padding: "5px",
+                }}
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                marginBottom: "20px",
+              }}
+            >
+              <label>Weighted Score</label>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  width: "50%",
+                }}
+              >
+                <div
+                  type="button"
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    width: "25px",
+                    height: "25px",
+                    borderRadius: "15px",
+                    backgroundColor: "#F4F6F8",
+                    border: "1px solid #BCBEC0",
+                    cursor: "pointer",
+                  }}
+                  onClick={decrementScore}
+                >
+                  -
+                </div>
+
+                <input
+                  type="text"
+                  name="score"
+                  value={score}
+                  readOnly
+                  style={{
+                    height: "35px",
+                    width: "50%",
+                    border: "1px solid #BCBEC0",
+                    backgroundColor: "#F4F6F8",
+                    borderRadius: "5px",
+                    padding: "5px",
+                    textAlign: "center",
+                  }}
+                />
+                <div
+                  type="button"
+                  style={{
+                    cursor: "pointer",
+                    display: "flex",
+                    justifyContent: "center",
+                    width: "25px",
+                    height: "25px",
+                    borderRadius: "15px",
+                    backgroundColor: "#F4F6F8",
+                    border: "1px solid #BCBEC0",
+                  }}
+                  onClick={incrementScore}
+                >
+                  +
+                </div>
+              </div>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+              }}
+            >
+              <input
+                type="submit"
+                value="Update"
+                style={{
+                  backgroundColor: "#6243ED",
+                  color: "white",
+                  fontWeight: "bold",
+                  padding: "10px",
+                  border: "none",
+                  borderRadius: "5px",
+                  height: "50px",
+                }}
+              />
+            </div>
+          </form>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={deleteModalIsOpen}
+        onRequestClose={closeDeleteModal}
+        style={customStyles}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: "100%",
+            height: "80%",
+            padding: "20px 10px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              width: "100%",
+            }}
+          >
+            <CloseCircle size="24" color="#BCBEC0" onClick={closeDeleteModal} />
+          </div>
+
+          <h2>Delete This Risk Factor?</h2>
+          <Row></Row>
+
+          <form
+            style={{
+              width: "80%",
+              paddingBottom: "20px",
+            }}
+            onSubmit={(event) => {
+              setIsPoolLoading(true);
+              event.preventDefault();
+              deleteRiskFactorPool(currentItem.id);
+              setCurrentItem([]);
+              closeDeleteModal();
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+              }}
+            >
+              <input
+                type="submit"
+                value="Delete"
+                style={{
+                  backgroundColor: "#6243ED",
+                  color: "white",
+                  fontWeight: "bold",
+                  padding: "10px",
+                  border: "none",
+                  borderRadius: "5px",
+                  height: "50px",
+                }}
+              />
+            </div>
+          </form>
+        </div>
+      </Modal>
+      <DndProvider backend={HTML5Backend}>
+        <ScrollableContainer>
+          <ResponsiveWrapper>
+            <Container>
+              <Card3>
+                <SwitchWrapper>
+                  <SwitchColumn>
+                    <SwitchText
+                      active={activeSwitch === "Risk Factor"}
+                      onClick={() => setActiveSwitch("Risk Factor")}
+                    >
+                      Risk Factor
+                    </SwitchText>
+                    <Highlight1 active={activeSwitch} />
+                  </SwitchColumn>
+                  <SwitchColumn>
+                    <SwitchText
+                      active={activeSwitch === "Compliance Review"}
+                      onClick={() => setActiveSwitch("Compliance Review")}
+                    >
+                      Compliance Review
+                    </SwitchText>
+                    <Highlight2 active={activeSwitch} />
+                  </SwitchColumn>
+                </SwitchWrapper>
+              </Card3>
+              <Row>
+                {activeSwitch === "Risk Factor" ? (
+                  <Container>
+                    <Row>
+                      <CardTitleTextBig>Country Risk Factor</CardTitleTextBig>
+                      <Buttons>
+                        <Add size="24" color="#fff" />
+                        Add New
+                      </Buttons>
+                    </Row>
+                    <Row>
+                      <LeftCard>
                         <Row>
-                          <CountryWrapper>
-                            <CountryTab
-                              active={activeCountry === "United Kingdom"}
-                              onClick={() => setActiveCountry("United Kingdom")}
-                            >
-                              United Kingdom
-                            </CountryTab>
-                            <Line active={activeCountry === "United Kingdom"} />
-                          </CountryWrapper>
-                          <CountryWrapper>
-                            <CountryTab
-                              active={activeCountry === "Nigeria"}
-                              onClick={() => setActiveCountry("Nigeria")}
-                            >
-                              Nigeria
-                            </CountryTab>
-                            <Line active={activeCountry === "Nigeria"} />
-                          </CountryWrapper>
-                          <CountryWrapper>
-                            <CountryTab
-                              active={activeCountry === "Kenya"}
-                              onClick={() => setActiveCountry("Kenya")}
-                            >
-                              Kenya
-                            </CountryTab>
-                            <Line active={activeCountry === "Kenya"} />
-                          </CountryWrapper>
+                          <Row>
+                            <CountryWrapper>
+                              <CountryTab
+                                active={activeCountry === "United Kingdom"}
+                                onClick={() =>
+                                  setActiveCountry("United Kingdom")
+                                }
+                              >
+                                United Kingdom
+                              </CountryTab>
+                              <Line
+                                active={activeCountry === "United Kingdom"}
+                              />
+                            </CountryWrapper>
+                            <CountryWrapper>
+                              <CountryTab
+                                active={activeCountry === "Nigeria"}
+                                onClick={() => setActiveCountry("Nigeria")}
+                              >
+                                Nigeria
+                              </CountryTab>
+                              <Line active={activeCountry === "Nigeria"} />
+                            </CountryWrapper>
+                            <CountryWrapper>
+                              <CountryTab
+                                active={activeCountry === "Kenya"}
+                                onClick={() => setActiveCountry("Kenya")}
+                              >
+                                Kenya
+                              </CountryTab>
+                              <Line active={activeCountry === "Kenya"} />
+                            </CountryWrapper>
+                          </Row>
                         </Row>
-                      </Row>
-                      <LineWrapper>
-                        <Line active={activeCountry === "United Kingdom"} />
-                        <Line active={activeCountry === "Nigeria"} />
-                        <Line active={activeCountry === "Kenya"} />
-                      </LineWrapper>
+                        <LineWrapper>
+                          <Line active={activeCountry === "United Kingdom"} />
+                          <Line active={activeCountry === "Nigeria"} />
+                          <Line active={activeCountry === "Kenya"} />
+                        </LineWrapper>
 
-                      {renderRiskFactor()}
-                    </LeftCard>
-                    <RightCard>
-                      <Column>
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            width: "100%",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <CardTitleText3>Risk Factor Pool</CardTitleText3>
-                          <Button2>
-                            <Add size="24" color="#000" />
-                            Add New
-                          </Button2>
-                        </span>
-                        <InnerRow>
-                          <InnerCard2>
-                            <ListColumn>
-                              {riskFactorsMain.map((item, index) => (
-                                <ListCard2
-                                  key={index}
-                                  isDefault={item.isDefault}
-                                >
-                                  <CardText>{item.factor}</CardText>
-
-                                  <span>
-                                    <Row>
-                                      <Edit2 size="9" color="#000" />
-                                      <Trash size="9" color="#000" />
-                                    </Row>
-                                  </span>
-                                </ListCard2>
-                              ))}
-                            </ListColumn>
-                          </InnerCard2>
-                        </InnerRow>
-                      </Column>
-                    </RightCard>
-                  </Row>
-                </Container>
-              ) : (
-                <Container>
-                  <Row>
-                    <CardTitleText>{activeCountry}</CardTitleText>
-                    <span style={{ width: "50%" }}>
-                      <Row>
+                        {renderRiskFactor()}
+                      </LeftCard>
+                      <RightCard>
+                        <Column>
+                          <span
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              width: "100%",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <CardTitleText3>Risk Factor Pool</CardTitleText3>
+                            <Button2 onClick={openModal}>
+                              <Add size="24" color="#000" />
+                              Add New
+                            </Button2>
+                          </span>
+                          <InnerRow>
+                            <InnerCard2>
+                              {isPoolLoading ? (
+                                <LoaderContainer>
+                                  <PuffLoader
+                                    color="#644AE5"
+                                    loading={isPoolLoading}
+                                    size={100}
+                                  />
+                                </LoaderContainer>
+                              ) : (
+                                <ListColumn>
+                                  {riskFactorPool.map((item, index) => (
+                                    <DraggableListCard2
+                                      key={index}
+                                      item={item}
+                                      index={index}
+                                    />
+                                  ))}
+                                </ListColumn>
+                              )}
+                            </InnerCard2>
+                          </InnerRow>
+                        </Column>
+                      </RightCard>
+                    </Row>
+                  </Container>
+                ) : (
+                  <Container>
+                    <Row>
+                      <CardTitleText>{activeCountry}</CardTitleText>
+                      <span style={{ width: "50%" }}>
                         <Row>
-                          <CountryWrapper>
-                            <CountryTab
-                              active={activeCountry === "United Kingdom"}
-                              onClick={() => setActiveCountry("United Kingdom")}
-                            >
-                              United Kingdom{" "}
-                              <ReactCountryFlag
-                                countryCode="GB"
-                                svg
-                                style={{
-                                  width: "1.5em",
-                                  height: "1.5em",
-                                  borderRadius: "100%"
-                                }}
+                          <Row>
+                            <CountryWrapper>
+                              <CountryTab
+                                active={activeCountry === "United Kingdom"}
+                                onClick={() =>
+                                  setActiveCountry("United Kingdom")
+                                }
+                              >
+                                United Kingdom{" "}
+                                <ReactCountryFlag
+                                  countryCode="GB"
+                                  svg
+                                  style={{
+                                    width: "1.5em",
+                                    height: "1.5em",
+                                    borderRadius: "100%",
+                                  }}
+                                />
+                              </CountryTab>
+                              <Line
+                                active={activeCountry === "United Kingdom"}
                               />
-                            </CountryTab>
-                            <Line active={activeCountry === "United Kingdom"} />
-                          </CountryWrapper>
-                          <CountryWrapper>
-                            <CountryTab
-                              active={activeCountry === "Nigeria"}
-                              onClick={() => setActiveCountry("Nigeria")}
-                            >
-                              Nigeria
-                            </CountryTab>
-                            <Line active={activeCountry === "Nigeria"} />
-                          </CountryWrapper>
-                          <CountryWrapper>
-                            <CountryTab
-                              active={activeCountry === "Kenya"}
-                              onClick={() => setActiveCountry("Kenya")}
-                            >
-                              Kenya
-                            </CountryTab>
-                            <Line active={activeCountry === "Kenya"} />
-                          </CountryWrapper>
+                            </CountryWrapper>
+                            <CountryWrapper>
+                              <CountryTab
+                                active={activeCountry === "Nigeria"}
+                                onClick={() => setActiveCountry("Nigeria")}
+                              >
+                                Nigeria
+                              </CountryTab>
+                              <Line active={activeCountry === "Nigeria"} />
+                            </CountryWrapper>
+                            <CountryWrapper>
+                              <CountryTab
+                                active={activeCountry === "Kenya"}
+                                onClick={() => setActiveCountry("Kenya")}
+                              >
+                                Kenya
+                              </CountryTab>
+                              <Line active={activeCountry === "Kenya"} />
+                            </CountryWrapper>
+                          </Row>
                         </Row>
-                      </Row>
-                      <LineWrapper>
-                        <Line active={activeCountry === "United Kingdom"} />
-                        <Line active={activeCountry === "Nigeria"} />
-                        <Line active={activeCountry === "Kenya"} />
-                      </LineWrapper>
-                    </span>
-                  </Row>
-                  <Row>
-                    <NormalCard>
-                      <CardTitleText>Individual</CardTitleText>
-                      <Column>
-                        <span>
-                          <CardTitleText2>Low Risk(CDD)</CardTitleText2>
-                          <CardText3>{myString}</CardText3>
-                        </span>
-
-                        <InputContainer>
-                          <span
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              width: "50%",
-                            }}
-                          >
-                            <IconWrapper>
-                              <Clock size="18" color="#644AE5" variant="Bold" />
-                            </IconWrapper>
-                            <CardText4>Review Date will be</CardText4>
+                        <LineWrapper>
+                          <Line active={activeCountry === "United Kingdom"} />
+                          <Line active={activeCountry === "Nigeria"} />
+                          <Line active={activeCountry === "Kenya"} />
+                        </LineWrapper>
+                      </span>
+                    </Row>
+                    <Row>
+                      <NormalCard>
+                        <CardTitleText>Individual</CardTitleText>
+                        <Column>
+                          <span>
+                            <CardTitleText2>Low Risk(CDD)</CardTitleText2>
+                            <CardText3>{myString}</CardText3>
                           </span>
 
-                          <span
-                            style={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              width: "50%",
-                            }}
-                          >
-                            <DropdownContainer>
-                              <Dropdown>
-                                <option value="3 years">Every 3 Years</option>
-                                <option value="2 years">Every 2 Years</option>
-                                <option value="1 year">Every Year</option>
-                              </Dropdown>
-                              <ArrowDown2
-                                size="10"
-                                color="#644ae5"
-                                variant="Bold"
-                              />
-                            </DropdownContainer>
-                          </span>
-                        </InputContainer>
-                        <span>
-                          <CardTitleText2>Medium Risk (CDD)</CardTitleText2>
-                          <CardText3>{myString2}</CardText3>
-                        </span>
+                          <InputContainer>
+                            <span
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                width: "50%",
+                              }}
+                            >
+                              <IconWrapper>
+                                <Clock
+                                  size="18"
+                                  color="#644AE5"
+                                  variant="Bold"
+                                />
+                              </IconWrapper>
+                              <CardText4>Review Date will be</CardText4>
+                            </span>
 
-                        <InputContainer>
-                          <span
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              width: "50%",
-                            }}
-                          >
-                            <IconWrapper>
-                              <Clock size="18" color="#644AE5" variant="Bold" />
-                            </IconWrapper>
-                            <CardText4>Review Date will be</CardText4>
-                          </span>
-
-                          <span
-                            style={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              width: "50%",
-                            }}
-                          >
-                            <DropdownContainer>
-                              <Dropdown>
-                                <option value="3 years">Every 3 Years</option>
-                                <option value="2 years">Every 2 Years</option>
-                                <option value="1 year">Every Year</option>
-                              </Dropdown>
-                              <ArrowDown2
-                                size="10"
-                                color="#644ae5"
-                                variant="Bold"
-                              />
-                            </DropdownContainer>
-                          </span>
-                        </InputContainer>
-                        <span>
-                          <CardTitleText2>High Risk (EDD) </CardTitleText2>
-                          <CardText3>{myString2}</CardText3>
-                        </span>
-
-                        <InputContainer>
-                          <span
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              width: "50%",
-                            }}
-                          >
-                            <IconWrapper>
-                              <Clock size="18" color="#644AE5" variant="Bold" />
-                            </IconWrapper>
-                            <CardText4>Review Date will be</CardText4>
+                            <span
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                width: "50%",
+                              }}
+                            >
+                              <DropdownContainer>
+                                <Dropdown>
+                                  <option value="3 years">Every 3 Years</option>
+                                  <option value="2 years">Every 2 Years</option>
+                                  <option value="1 year">Every Year</option>
+                                </Dropdown>
+                                <ArrowDown2
+                                  size="10"
+                                  color="#644ae5"
+                                  variant="Bold"
+                                />
+                              </DropdownContainer>
+                            </span>
+                          </InputContainer>
+                          <span>
+                            <CardTitleText2>Medium Risk (CDD)</CardTitleText2>
+                            <CardText3>{myString2}</CardText3>
                           </span>
 
-                          <span
-                            style={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              width: "50%",
-                            }}
-                          >
-                            <DropdownContainer>
-                              <Dropdown>
-                                <option value="3 years">Every 3 Years</option>
-                                <option value="2 years">Every 2 Years</option>
-                                <option value="1 year">Every Year</option>
-                              </Dropdown>
-                              <ArrowDown2
-                                size="10"
-                                color="#644ae5"
-                                variant="Bold"
-                              />
-                            </DropdownContainer>
-                          </span>
-                        </InputContainer>
-                      </Column>
-                    </NormalCard>
-                    <NormalCard>
-                      <CardTitleText>Business</CardTitleText>
-                      <Column>
-                        <span>
-                          <CardTitleText2>Low Risk(CDD)</CardTitleText2>
-                          <CardText3>{myString}</CardText3>
-                        </span>
+                          <InputContainer>
+                            <span
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                width: "50%",
+                              }}
+                            >
+                              <IconWrapper>
+                                <Clock
+                                  size="18"
+                                  color="#644AE5"
+                                  variant="Bold"
+                                />
+                              </IconWrapper>
+                              <CardText4>Review Date will be</CardText4>
+                            </span>
 
-                        <InputContainer>
-                          <span
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              width: "50%",
-                            }}
-                          >
-                            <IconWrapper>
-                              <Clock size="18" color="#644AE5" variant="Bold" />
-                            </IconWrapper>
-                            <CardText4>Review Date will be</CardText4>
-                          </span>
-
-                          <span
-                            style={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              width: "50%",
-                            }}
-                          >
-                            <DropdownContainer>
-                              <Dropdown>
-                                <option value="3 years">Every 3 Years</option>
-                                <option value="2 years">Every 2 Years</option>
-                                <option value="1 year">Every Year</option>
-                              </Dropdown>
-                              <ArrowDown2
-                                size="10"
-                                color="#644ae5"
-                                variant="Bold"
-                              />
-                            </DropdownContainer>
-                          </span>
-                        </InputContainer>
-                        <span>
-                          <CardTitleText2>Medium Risk (CDD)</CardTitleText2>
-                          <CardText3>{myString2}</CardText3>
-                        </span>
-
-                        <InputContainer>
-                          <span
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              width: "50%",
-                            }}
-                          >
-                            <IconWrapper>
-                              <Clock size="18" color="#644AE5" variant="Bold" />
-                            </IconWrapper>
-                            <CardText4>Review Date will be</CardText4>
+                            <span
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                width: "50%",
+                              }}
+                            >
+                              <DropdownContainer>
+                                <Dropdown>
+                                  <option value="3 years">Every 3 Years</option>
+                                  <option value="2 years">Every 2 Years</option>
+                                  <option value="1 year">Every Year</option>
+                                </Dropdown>
+                                <ArrowDown2
+                                  size="10"
+                                  color="#644ae5"
+                                  variant="Bold"
+                                />
+                              </DropdownContainer>
+                            </span>
+                          </InputContainer>
+                          <span>
+                            <CardTitleText2>High Risk (EDD) </CardTitleText2>
+                            <CardText3>{myString2}</CardText3>
                           </span>
 
-                          <span
-                            style={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              width: "50%",
-                            }}
-                          >
-                            <DropdownContainer>
-                              <Dropdown>
-                                <option value="3 years">Every 3 Years</option>
-                                <option value="2 years">Every 2 Years</option>
-                                <option value="1 year">Every Year</option>
-                              </Dropdown>
-                              <ArrowDown2
-                                size="10"
-                                color="#644ae5"
-                                variant="Bold"
-                              />
-                            </DropdownContainer>
-                          </span>
-                        </InputContainer>
-                        <span>
-                          <CardTitleText2>High Risk (EDD) </CardTitleText2>
-                          <CardText3>{myString2}</CardText3>
-                        </span>
+                          <InputContainer>
+                            <span
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                width: "50%",
+                              }}
+                            >
+                              <IconWrapper>
+                                <Clock
+                                  size="18"
+                                  color="#644AE5"
+                                  variant="Bold"
+                                />
+                              </IconWrapper>
+                              <CardText4>Review Date will be</CardText4>
+                            </span>
 
-                        <InputContainer>
-                          <span
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              width: "50%",
-                            }}
-                          >
-                            <IconWrapper>
-                              <Clock size="18" color="#644AE5" variant="Bold" />
-                            </IconWrapper>
-                            <CardText4>Review Date will be</CardText4>
+                            <span
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                width: "50%",
+                              }}
+                            >
+                              <DropdownContainer>
+                                <Dropdown>
+                                  <option value="3 years">Every 3 Years</option>
+                                  <option value="2 years">Every 2 Years</option>
+                                  <option value="1 year">Every Year</option>
+                                </Dropdown>
+                                <ArrowDown2
+                                  size="10"
+                                  color="#644ae5"
+                                  variant="Bold"
+                                />
+                              </DropdownContainer>
+                            </span>
+                          </InputContainer>
+                        </Column>
+                      </NormalCard>
+                      <NormalCard>
+                        <CardTitleText>Business</CardTitleText>
+                        <Column>
+                          <span>
+                            <CardTitleText2>Low Risk(CDD)</CardTitleText2>
+                            <CardText3>{myString}</CardText3>
                           </span>
 
-                          <span
-                            style={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              width: "50%",
-                            }}
-                          >
-                            <DropdownContainer>
-                              <Dropdown>
-                                <option value="3 years">Every 3 Years</option>
-                                <option value="2 years">Every 2 Years</option>
-                                <option value="1 year">Every Year</option>
-                              </Dropdown>
-                              <ArrowDown2
-                                size="10"
-                                color="#644ae5"
-                                variant="Bold"
-                              />
-                            </DropdownContainer>
+                          <InputContainer>
+                            <span
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                width: "50%",
+                              }}
+                            >
+                              <IconWrapper>
+                                <Clock
+                                  size="18"
+                                  color="#644AE5"
+                                  variant="Bold"
+                                />
+                              </IconWrapper>
+                              <CardText4>Review Date will be</CardText4>
+                            </span>
+
+                            <span
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                width: "50%",
+                              }}
+                            >
+                              <DropdownContainer>
+                                <Dropdown>
+                                  <option value="3 years">Every 3 Years</option>
+                                  <option value="2 years">Every 2 Years</option>
+                                  <option value="1 year">Every Year</option>
+                                </Dropdown>
+                                <ArrowDown2
+                                  size="10"
+                                  color="#644ae5"
+                                  variant="Bold"
+                                />
+                              </DropdownContainer>
+                            </span>
+                          </InputContainer>
+                          <span>
+                            <CardTitleText2>Medium Risk (CDD)</CardTitleText2>
+                            <CardText3>{myString2}</CardText3>
                           </span>
-                        </InputContainer>
-                      </Column>
-                    </NormalCard>
-                  </Row>
-                </Container>
-              )}
-            </Row>
-          </Container>
-        </ResponsiveWrapper>
-      </ScrollableContainer>
+
+                          <InputContainer>
+                            <span
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                width: "50%",
+                              }}
+                            >
+                              <IconWrapper>
+                                <Clock
+                                  size="18"
+                                  color="#644AE5"
+                                  variant="Bold"
+                                />
+                              </IconWrapper>
+                              <CardText4>Review Date will be</CardText4>
+                            </span>
+
+                            <span
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                width: "50%",
+                              }}
+                            >
+                              <DropdownContainer>
+                                <Dropdown>
+                                  <option value="3 years">Every 3 Years</option>
+                                  <option value="2 years">Every 2 Years</option>
+                                  <option value="1 year">Every Year</option>
+                                </Dropdown>
+                                <ArrowDown2
+                                  size="10"
+                                  color="#644ae5"
+                                  variant="Bold"
+                                />
+                              </DropdownContainer>
+                            </span>
+                          </InputContainer>
+                          <span>
+                            <CardTitleText2>High Risk (EDD) </CardTitleText2>
+                            <CardText3>{myString2}</CardText3>
+                          </span>
+
+                          <InputContainer>
+                            <span
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                width: "50%",
+                              }}
+                            >
+                              <IconWrapper>
+                                <Clock
+                                  size="18"
+                                  color="#644AE5"
+                                  variant="Bold"
+                                />
+                              </IconWrapper>
+                              <CardText4>Review Date will be</CardText4>
+                            </span>
+
+                            <span
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                width: "50%",
+                              }}
+                            >
+                              <DropdownContainer>
+                                <Dropdown>
+                                  <option value="3 years">Every 3 Years</option>
+                                  <option value="2 years">Every 2 Years</option>
+                                  <option value="1 year">Every Year</option>
+                                </Dropdown>
+                                <ArrowDown2
+                                  size="10"
+                                  color="#644ae5"
+                                  variant="Bold"
+                                />
+                              </DropdownContainer>
+                            </span>
+                          </InputContainer>
+                        </Column>
+                      </NormalCard>
+                    </Row>
+                  </Container>
+                )}
+              </Row>
+            </Container>
+          </ResponsiveWrapper>
+        </ScrollableContainer>
+      </DndProvider>
     </>
   );
 }
@@ -785,7 +1927,7 @@ const InnerRow = styled.div`
   }
 `;
 const InnerCard = styled(Card)`
-  height: 98%;
+  height: 95%;
   width: 50%;
   padding: 15px;
   background-color: #f7f9fc;
@@ -820,19 +1962,18 @@ const ListColumn = styled.div`
 `;
 const ListCard = styled(Card)`
   flex-direction: row;
-  height: 40px;
-  padding: 7px;
+  height: 50px;
+  padding: 10px;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
-  background-color: ${({ isDefault }) => (isDefault ? "#DEE5F6" : "#fff")};
 `;
 const ListCard2 = styled(Card)`
   flex-direction: row;
-  height: 40px;
-  padding: 7px;
+  height: 50px;
+  padding: 12px;
   width: 100%;
   display: flex;
   align-items: center;
@@ -925,4 +2066,10 @@ const Dropdown = styled.select`
   padding: 10px;
   font-size: 12px;
   cursor: pointer;
+`;
+const LoaderContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
 `;
