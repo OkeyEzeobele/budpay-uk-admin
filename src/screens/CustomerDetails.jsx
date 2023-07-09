@@ -1,8 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import api from "../api";
+import { ToastContainer, toast } from "react-toastify";
 import { useTable } from "react-table";
 import { useLocation } from "react-router-dom";
+import { formatNumber } from "../utilities/numUtils.js";
 // Sections
 import TopNavbar from "../components/Nav/TopNavbar";
 import ToggleSwitch from "../components/Buttons/ToggleSwitch";
@@ -12,9 +15,9 @@ import PuffLoader from "react-spinners/PuffLoader";
 
 const RADIAN = Math.PI / 180;
 const data = [
-  { name: "A", value: 50, color: "#E54A4A" },
+  { name: "A", value: 50, color:  "#5FC163"},
   { name: "B", value: 30, color: "#EAC040" },
-  { name: "C", value: 20, color: "#5FC163" },
+  { name: "C", value: 20, color: "#E54A4A" },
 ];
 const cx = 37.5;
 const cy = 50;
@@ -58,17 +61,174 @@ const createTableData = (length = 20) => {
     };
   });
 };
+const Table = ({ data }) => (
+  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <thead>
+      <tr>
+        <th
+          style={{
+            color: "rgba(0, 0, 0, 0.6)", // #000000 with 60% opacity
+            borderBottom: "1px solid #C2C2C2",
+            textAlign: "center",
+            height: "60px",
+            verticalAlign: "middle",
+            fontSize: "14px",
+          }}
+        >
+          Transaction
+        </th>
+        <th
+          style={{
+            color: "rgba(0, 0, 0, 0.6)", // #000000 with 60% opacity
+            borderBottom: "1px solid #C2C2C2",
+            textAlign: "center",
+            height: "60px",
+            verticalAlign: "middle",
+            fontSize: "14px",
+          }}
+        >
+          Category
+        </th>
+        <th
+          style={{
+            color: "rgba(0, 0, 0, 0.6)", // #000000 with 60% opacity
+            borderBottom: "1px solid #C2C2C2",
+            textAlign: "center",
+            height: "60px",
+            verticalAlign: "middle",
+            fontSize: "14px",
+          }}
+        >
+          Amount
+        </th>
+        <th
+          style={{
+            color: "rgba(0, 0, 0, 0.6)", // #000000 with 60% opacity
+            borderBottom: "1px solid #C2C2C2",
+            textAlign: "center",
+            height: "60px",
+            verticalAlign: "middle",
+            fontSize: "14px",
+          }}
+        >
+          Status
+        </th>
+        <th
+          style={{
+            color: "rgba(0, 0, 0, 0.6)", // #000000 with 60% opacity
+            borderBottom: "1px solid #C2C2C2",
+            textAlign: "center",
+            height: "60px",
+            verticalAlign: "middle",
+            fontSize: "14px",
+          }}
+        >
+          Date
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {data.map((item, index) => (
+        <tr key={index} style={{ borderBottom: "1px solid #C2C2C2" }}>
+          <td
+            style={{
+              color: "#000",
+              textAlign: "center",
+              height: "40px",
+              verticalAlign: "middle",
+              fontSize: "12px",
+            }}
+          >
+            {`${item.receiverAccountName}`}
+          </td>
+          <td
+            style={{
+              color: "#000",
+              textAlign: "center",
+              height: "40px",
+              verticalAlign: "middle",
+              fontSize: "12px",
+            }}
+          >
+            {item.category}
+          </td>
+          <td
+            style={{
+              color: "#000",
+              textAlign: "center",
+              height: "40px",
+              verticalAlign: "middle",
+              fontSize: "12px",
+            }}
+          >
+            {`${item.currencySymbol}${formatNumber(item.amount)}`}
+          </td>
+          <td
+            style={{
+              textAlign: "center",
+              height: "40px",
+              verticalAlign: "middle",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <div
+              style={{
+                color:
+                  item.status === "Completed"
+                    ? "#0DAE0A"
+                    : item.status === "Pending"
+                    ? "#AE800A"
+                    : "#AE0A0A",
+                backgroundColor:
+                  item.status === "Completed"
+                    ? "rgba(13, 174, 10, 0.5)"
+                    : item.status === "Pending"
+                    ? "rgba(174, 128, 10, 0.5)"
+                    : "rgba(174, 10, 10, 0.5)",
+                padding: "3px",
+                borderRadius: "5px",
+                width: "60%",
+                textAlign: "center",
+                fontSize: "12px",
+                fontWeight: "bold",
+              }}
+            >
+              {item.status}
+            </div>
+          </td>
+          <td
+            style={{
+              color: "#000",
+              textAlign: "center",
+              height: "40px",
+              verticalAlign: "middle",
+              fontSize: "12px",
+            }}
+          >
+            {item.initiatedOn}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+);
 
 export default function CustomerDetails() {
   const location = useLocation();
   const [basicInfo, setBasicInfo] = useState(null);
   useEffect(() => {
     setBasicInfo(location.state.item);
-    console.log(basicInfo);
   }, [location.state]);
+  const [customerDetails, setCustomerDetails] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [toggleState, setToggleState] = useState("Individual");
+  useEffect(() => {
+    getCustomerDetails();
+  }, []);
   const { id } = useParams();
-  console.log(id);
+  // console.log(id);
   const navigate = useNavigate();
   const viewAmlCompliance = () => {
     const amlId = "1729";
@@ -85,6 +245,52 @@ export default function CustomerDetails() {
   const [activeSwitch, setActiveSwitch] = useState("Transaction");
   const [activeSwitchBusiness, setActiveSwitchBusiness] =
     useState("Transaction");
+
+    const getCustomerDetails = async () => {
+      let data ={
+        "channel": 1,
+        "ipAddress": "string",
+        "actor": 61,
+        "deviceId": "string",
+        "browser": "string",
+        "accountId": 0,
+        "userId": id
+      };
+      await api
+        .post(`/api/v2/customer/details`, data, {
+          headers: {
+            accept: "*/*",
+            "X-Auth-Signature": `179C050B170DAB3BEBB98603BD05FB47EE846336F5324FC6D9C34E82792A215EB65A6BC60BB7FEA38CD6389BF4E533E01B753A9787AA7E8E62FC6FA7B018B33C`,
+            "Content-Type": "application/json",
+          },
+        })
+        .then((response) => {
+          console.log(response);
+          if (response.data.isSuccessful === true) {
+            setCustomerDetails(response.data.returnedObjects);
+          } else {
+            toast.error(response.data.responseMessage, {
+              position: "top-right",
+              autoClose: 5000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              progress: undefined,
+              theme: "colored",
+              style: {
+                backgroundColor: "#f44336",
+                color: "#fff",
+              },
+            });
+          }
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          console.error(error);
+          setIsLoading(false);
+        });
+    };
   const tableData = useMemo(() => createTableData(), []);
   const tableColumns = useMemo(
     () => [
@@ -121,9 +327,9 @@ export default function CustomerDetails() {
       <TopNavbar />
       <ScrollableContainer>
         <ResponsiveWrapper>
-          {basicInfo === null ? (
+          {isLoading? (
             <LoaderContainer>
-              <PuffLoader color="#644AE5" loading={basicInfo===null} size={200} />
+              <PuffLoader color="#644AE5" loading={isLoading} size={200} />
             </LoaderContainer>
           ) : (
             <Container>
@@ -131,11 +337,12 @@ export default function CustomerDetails() {
                 <Card1 backgroundColor="#f8fbff">
                   <UserDetails>
                     <ProfileWrapper>
-                      <Profile size={50} variant="Bold" />
+                      {/* <Profile size={50} variant="Bold" /> */}
+                      <img src={customerDetails.customerInfo.selfie} alt={customerDetails.customerInfo.customerName}/>
                     </ProfileWrapper>
                     <AvatarSection>
-                      <h3>{basicInfo.fullName}</h3>
-                      <p>{basicInfo.emailAddress}</p>
+                      <h3>{customerDetails.customerInfo.customerName}</h3>
+                      <p>{customerDetails.customerInfo.emailAddress}</p>
                     </AvatarSection>
                     <CountrySection>
                       {/* <Flag /> */}
@@ -160,35 +367,7 @@ export default function CustomerDetails() {
                       <Card2>
                         <Summary>
                           <HeaderText>Total Balance</HeaderText>
-                          <h2>£12,987.03</h2>
-                          <div
-                            style={{
-                              color: "#0DAE0A",
-                              display: "flex",
-                              alignItems: "stretch",
-                              fontSize: 18,
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                backgroundColor: "#E3F9E3",
-                                borderRadius: "50%",
-                                width: "20px",
-                                height: "20px",
-                                marginRight: "5px",
-                              }}
-                            >
-                              <ExportCircle size={14} color="#0DAE0A" />
-                            </div>
-                            4.6%
-                          </div>
-                        </Summary>
-                        <Summary>
-                          <HeaderText>Pending Balance</HeaderText>
-                          <h2>£2,350.50</h2>
+                          <h2>{formatNumber(customerDetails.totalBalance, 'gbp')}</h2>
                           <div
                             style={{
                               color: "#0DAE0A",
@@ -287,7 +466,7 @@ export default function CustomerDetails() {
                                         ))}
                                       </Pie>
                                       {needle(
-                                        value,
+                                        parseInt(customerDetails.individualAccount.jumioRiskScore),
                                         data,
                                         45,
                                         70,
@@ -304,7 +483,7 @@ export default function CustomerDetails() {
                                         fontSize={10}
                                         fontWeight={"bold"}
                                       >
-                                        {`${value}`}
+                                        {`${parseInt(customerDetails.individualAccount.jumioRiskScore) || 0}`}
                                       </text>
                                     </PieChart>
                                   </Wrapper>
@@ -356,7 +535,7 @@ export default function CustomerDetails() {
                                         ))}
                                       </Pie>
                                       {needle(
-                                        value2,
+                                        customerDetails.individualAccount.amlComplianceScore,
                                         data,
                                         45,
                                         70,
@@ -373,7 +552,7 @@ export default function CustomerDetails() {
                                         fontSize={10}
                                         fontWeight={"bold"}
                                       >
-                                        {`${value2}`}
+                                        {`${parseInt(customerDetails.individualAccount.amlComplianceScore) || 0}`}
                                       </text>
                                     </PieChart>
                                   </Wrapper>
@@ -394,41 +573,41 @@ export default function CustomerDetails() {
                                   <CardContentWrapper>
                                     <Row2>
                                       <HeaderText>First Name</HeaderText>
-                                      <RegularText>{basicInfo.fullName.split(" ")[0]}</RegularText>
+                                      <RegularText>{customerDetails.customerInfo.customerName.split(" ")[0]}</RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Last Name</HeaderText>
-                                      <RegularText>{basicInfo.fullName.split(" ")[1]}</RegularText>
+                                      <RegularText>{customerDetails.customerInfo.customerName.split(" ")[1]}</RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Email Address</HeaderText>
                                       <RegularText>
-                                        {basicInfo.emailAddress}
+                                        {customerDetails.customerInfo.emailAddress}
                                       </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Phone Number</HeaderText>
-                                      <RegularText>{basicInfo.phoneNumber}</RegularText>
+                                      <RegularText>{customerDetails.customerInfo.customerNumber}</RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Date of Birth</HeaderText>
-                                      <RegularText>22 May, 2023</RegularText>
+                                      <RegularText>{customerDetails.individualAccount.dateOfBirth}</RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>
                                         Country of Residence
                                       </HeaderText>
-                                      <RegularText>United Kingdom</RegularText>
+                                      <RegularText>{customerDetails.individualAccount.countryOfResidence}</RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Personal Address</HeaderText>
                                       <RegularText>
-                                        1600 Pennsylvania Avenue
+                                      {customerDetails.individualAccount.personalAddress}
                                       </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Occupation</HeaderText>
-                                      <RegularText>Self Employed</RegularText>
+                                      <RegularText>{customerDetails.individualAccount.occupation}</RegularText>
                                     </Row2>
                                   </CardContentWrapper>
                                 </Column>
@@ -440,30 +619,30 @@ export default function CustomerDetails() {
                                         Purpose of Account
                                       </HeaderText>
                                       <RegularText>
-                                        Payment Collection, Virtual Wallet
+                                      {customerDetails.individualAccount.purposeOfAccount}
                                       </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>KYC Verified</HeaderText>
-                                      <RegularText>Yes</RegularText>
+                                      <RegularText>{customerDetails.individualAccount.kycVerified}</RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>
                                         KYC Verification Date
                                       </HeaderText>
-                                      <RegularText>27 May, 2023</RegularText>
+                                      <RegularText>{customerDetails.individualAccount.kycVerificationDate}</RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>KYC Outcome</HeaderText>
-                                      <RegularText>Passed</RegularText>
+                                      <RegularText>{customerDetails.individualAccount.kycOutcome}</RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Risk Category</HeaderText>
-                                      <RegularText>Medium(CDD)</RegularText>
+                                      <RegularText>{customerDetails.individualAccount.riskCategory}</RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Date Onboarded</HeaderText>
-                                      <RegularText>26 May, 2023</RegularText>
+                                      <RegularText>{customerDetails.individualAccount.dateOnboarded}</RegularText>
                                     </Row2>
                                   </CardContentWrapper>
                                 </Column>
@@ -475,52 +654,10 @@ export default function CustomerDetails() {
                         <Row>
                           <Container3>
                             <Card5>
-                              <TableWrapper>
-                                <table
-                                  {...getTableProps()}
-                                  style={{ border: "none" }}
-                                >
-                                  <thead>
-                                    {headerGroups.map((headerGroup) => (
-                                      <tr
-                                        {...headerGroup.getHeaderGroupProps()}
-                                      >
-                                        {headerGroup.headers.map((column) => (
-                                          <th
-                                            {...column.getHeaderProps()}
-                                            style={{ border: "none" }}
-                                          >
-                                            {column.render("Header")}
-                                          </th>
-                                        ))}
-                                      </tr>
-                                    ))}
-                                  </thead>
-                                  <tbody {...getTableBodyProps()}>
-                                    {rows.map((row) => {
-                                      prepareRow(row);
-                                      return (
-                                        <tr {...row.getRowProps()}>
-                                          {row.cells.map((cell) => {
-                                            return (
-                                              <td
-                                                {...cell.getCellProps()}
-                                                style={{
-                                                  borderBottom:
-                                                    "1px solid rgba(0,0,0,0.1)",
-                                                  borderRight: "none",
-                                                }}
-                                              >
-                                                {cell.render("Cell")}
-                                              </td>
-                                            );
-                                          })}
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              </TableWrapper>
+                            <TransactionCardContent>
+                            <Table data={customerDetails.transactions} />
+                            </TransactionCardContent>
+                            
                             </Card5>
                           </Container3>
                         </Row>
@@ -534,7 +671,7 @@ export default function CustomerDetails() {
                       <Card2>
                         <Summary>
                           <HeaderText>Total Balance</HeaderText>
-                          <h2>£12,987.03</h2>
+                          <h2>{formatNumber()}</h2>
                           <div
                             style={{
                               color: "#0DAE0A",
@@ -1004,10 +1141,27 @@ const Card5 = styled.div`
   justify-content: space-between;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  padding: 0;
+  padding: 30px;
   background-color: #fff;
   margin-bottom: 10px;
 `;
+const TransactionCardContent = styled.div`
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}`;
 const UserDetails = styled.div`
   flex-direction: row;
   display: flex;

@@ -25,6 +25,7 @@ export default function Settings() {
   const [updatePoolModalIsOpen, setUpdatePoolModalIsOpen] = useState(false);
   const [updateParamModalIsOpen, setUpdateParamModalIsOpen] = useState(false);
   const [deleteModalIsOpen, setDeleteModalIsOpen] = useState(false);
+  const [deleteFactorModalIsOpen, setDeleteFactorModalIsOpen] = useState(false);
   const [toggleState, setToggleState] = useState("Risk Factor");
   const [activeSwitch, setActiveSwitch] = useState("Risk Factor");
   const [activeCountry, setActiveCountry] = useState("United Kingdom");
@@ -93,6 +94,13 @@ export default function Settings() {
   };
   const closeDeleteModal = () => {
     setDeleteModalIsOpen(false);
+    setCurrentItem([]);
+  };
+  const openFactorDeleteModal = () => {
+    setDeleteFactorModalIsOpen(true);
+  };
+  const closeFactorDeleteModal = () => {
+    setDeleteFactorModalIsOpen(false);
     setCurrentItem([]);
   };
   const setRiskFactors = (accountRiskFactor) => {
@@ -397,6 +405,7 @@ export default function Settings() {
       });
   };
   const getaccountRiskFactorPool = async () => {
+    setIsFactorLoading(true);
     let body = {
       channel: 1,
       ipAddress: "string",
@@ -486,6 +495,56 @@ export default function Settings() {
           });
         }
         setIsPoolLoading(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsPoolLoading(false);
+      });
+  };
+  const deleteRiskFactor = async (id) => {
+    await api
+      .get(`/api/v2/riskparameter/delete/${id}`, {
+        headers: {
+          accept: "*/*",
+          "X-Auth-Signature": `179C050B170DAB3BEBB98603BD05FB47EE846336F5324FC6D9C34E82792A215EB65A6BC60BB7FEA38CD6389BF4E533E01B753A9787AA7E8E62FC6FA7B018B33C`,
+          "Content-Type": "application/json",
+        },
+      })
+      .then((response) => {
+        // console.log(response);
+        if (response.data.isSuccessful === true) {
+          toast.success(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#4CBB17",
+              color: "#fff",
+            },
+          });
+          getaccountRiskFactorPool();
+        } else {
+          toast.error(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#f44336",
+              color: "#fff",
+            },
+          });
+        }
+        setIsFactorLoading(false);
       })
       .catch((error) => {
         console.error(error);
@@ -627,7 +686,15 @@ export default function Settings() {
                           }}
                           cursor={"pointer"}
                         />
-                        <Trash size="12" color="#000" />
+                        <Trash
+                          size="12"
+                          color="#000"
+                          onClick={() => {
+                            setCurrentItem(item);
+                            openFactorDeleteModal();
+                          }}
+                          cursor={"pointer"}
+                        />
                       </div>
                     </ListCard>
                   ))}
@@ -679,7 +746,15 @@ export default function Settings() {
                           }}
                           cursor={"pointer"}
                         />
-                        <Trash size="12" color="#000" />
+                        <Trash
+                          size="12"
+                          color="#000"
+                          onClick={() => {
+                            setCurrentItem(item);
+                            openFactorDeleteModal();
+                          }}
+                          cursor={"pointer"}
+                        />
                       </div>
                     </ListCard>
                   ))}
@@ -1250,6 +1325,75 @@ export default function Settings() {
               deleteRiskFactorPool(currentItem.id);
               setCurrentItem([]);
               closeDeleteModal();
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+              }}
+            >
+              <input
+                type="submit"
+                value="Delete"
+                style={{
+                  backgroundColor: "#6243ED",
+                  color: "white",
+                  fontWeight: "bold",
+                  padding: "10px",
+                  border: "none",
+                  borderRadius: "5px",
+                  height: "50px",
+                }}
+              />
+            </div>
+          </form>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={deleteFactorModalIsOpen}
+        onRequestClose={closeFactorDeleteModal}
+        style={customStyles}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: "100%",
+            height: "80%",
+            padding: "20px 10px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              width: "100%",
+            }}
+          >
+            <CloseCircle
+              size="24"
+              color="#BCBEC0"
+              onClick={closeFactorDeleteModal}
+            />
+          </div>
+
+          <h2>Delete This Risk Factor?</h2>
+          <Row></Row>
+
+          <form
+            style={{
+              width: "80%",
+              paddingBottom: "20px",
+            }}
+            onSubmit={(event) => {
+              setIsFactorLoading(true);
+              event.preventDefault();
+              deleteRiskFactor(currentItem.id);
+              setCurrentItem([]);
+              closeFactorDeleteModal();
             }}
           >
             <div
@@ -1962,7 +2106,7 @@ const ListColumn = styled.div`
 `;
 const ListCard = styled(Card)`
   flex-direction: row;
-  height: 50px;
+
   padding: 10px;
   width: 100%;
   display: flex;
@@ -1972,7 +2116,7 @@ const ListCard = styled(Card)`
 `;
 const ListCard2 = styled(Card)`
   flex-direction: row;
-  height: 50px;
+
   padding: 12px;
   width: 100%;
   display: flex;
