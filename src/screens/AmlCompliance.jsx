@@ -1,6 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams, useLocation } from "react-router-dom";
+import api from "../api";
+import { ToastContainer, toast } from "react-toastify";
 import styled, { css } from "styled-components";
 import { Profile } from "iconsax-react";
+import PuffLoader from "react-spinners/PuffLoader";
 import ReactCountryFlag from "react-country-flag";
 import chroma from "chroma-js";
 
@@ -8,65 +12,86 @@ import chroma from "chroma-js";
 import TopNavbar from "../components/Nav/TopNavbar";
 
 export default function AmlCompliance() {
-  const [score, setScore] = useState(59);
-  const riskProfile = [
-    {
-      riskFactor: "Customer Classification",
-      name: "Individual",
-      weightingFactor: 10,
-      score: 1,
-      status: "Passed",
-      weightedScore: 10,
+  const [isLoading, setIsLoading] = useState(true);
+  const [score, setScore] = useState(0);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const accountId = params.get("accountid");
+  const accountType = params.get("accountType");
+  const { id } = useParams();
+  console.log(
+    `accountId:${accountId} and accountType:${accountType} and id:${id}`
+  );
+  useEffect(() => {
+    getCustomerDetails(id, accountId);
+  }, []);
+  const [customerDetails, setCustomerDetails] = useState({
+    customerInfoObject: {
+      selfie: "",
+      customerName: "",
+      emailAddress: "",
+      customerNumber: "",
+      onboardedOn: "",
+      countryOfOrigin: "",
+      flag: "",
+      kycReviewDate: "",
+      riskScore: 0,
+      accountType: "",
+      businessType: "",
+      companyNumber: null,
+      businessName: "",
+      baseCurrency: null,
     },
-    {
-      riskFactor: "Profession",
-      name: "Casino Manager",
-      weightingFactor: 10,
-      score: 2,
-      status: "Review",
-      weightedScore: 20,
-    },
-    {
-      riskFactor: "Country of Origin",
-      name: "UK",
-      weightingFactor: 5,
-      score: 3,
-      status: "Passed",
-      weightedScore: 15,
-    },
-    {
-      riskFactor: "Country of Tax Residence",
-      name: "UK",
-      weightingFactor: 15,
-      score: 3,
-      status: "Passed",
-      weightedScore: 45,
-    },
-    {
-      riskFactor: "Purpose of Account",
-      name: "Virtual Card",
-      weightingFactor: 15,
-      score: 3,
-      status: "MLRO Approval",
-      weightedScore: 45,
-    },
-    {
-      riskFactor: "Presence of PEP",
-      name: "Yes",
-      weightingFactor: 15,
-      score: 3,
-      status: "Review",
-      weightedScore: 45,
-    },
-    {
-      riskFactor: "Adverse Media Presence",
-      name: "Criminal Activity",
-      weightingFactor: 15,
-      score: 3,
-      status: "MLRO Approval",
-      weightedScore: 45,
-    },
-  ];
+    riskInfoObjects: [],
+  });
+
+  const getCustomerDetails = async (id, acctId) => {
+    let data = {
+      channel: 1,
+      ipAddress: "string",
+      actor: 61,
+      deviceId: "string",
+      browser: "string",
+      accountId: acctId,
+      userId: id,
+    };
+    await api
+      .post(`/api/v2/customer/aml-compliance`, data, {
+        headers: {
+          accept: "*/*",
+          "X-Auth-Signature": `179C050B170DAB3BEBB98603BD05FB47EE846336F5324FC6D9C34E82792A215EB65A6BC60BB7FEA38CD6389BF4E533E01B753A9787AA7E8E62FC6FA7B018B33C`,
+          "Content-Type": "application/json",
+        },
+      })
+      .then((response) => {
+        console.log(response);
+        if (response.data.isSuccessful === true) {
+          setCustomerDetails(response.data.returnedObjects);
+          setScore(response.data.returnedObjects.customerInfoObject.riskScore);
+        } else {
+          toast.error(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#f44336",
+              color: "#fff",
+            },
+          });
+        }
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsLoading(false);
+      });
+  };
+  const riskProfile = customerDetails.riskInfoObjects;
   const Table = ({ data }) => (
     <table style={{ width: "100%", borderCollapse: "collapse" }}>
       <thead>
@@ -155,6 +180,7 @@ export default function AmlCompliance() {
                 height: "40px",
                 verticalAlign: "middle",
                 fontSize: "12px",
+                width: "20%",
               }}
             >
               {item.riskFactor}
@@ -166,9 +192,10 @@ export default function AmlCompliance() {
                 height: "40px",
                 verticalAlign: "middle",
                 fontSize: "12px",
+                width: "20%",
               }}
             >
-              {item.name}
+              {item.value}
             </td>
             <td
               style={{
@@ -279,122 +306,179 @@ export default function AmlCompliance() {
   return (
     <>
       <TopNavbar />
+      <ToastContainer />
       <ScrollableContainer>
         <ResponsiveWrapper>
-          <TopContainer>
-            <ProfileCard>
-              <ProfileWrapper>
-                <Profile size={300} variant="Bold" />
-              </ProfileWrapper>
-              <VerticalWrapper>
-                <p style={{ color: "#000", fontSize: "22px" }}>Joe Wilson</p>
-                <p style={{ color: "#676767", fontSize: "16px" }}>
-                  joewilson@gmail.com
-                </p>
-                <CountrySection>
-                  <FlagWrapper>
-                    <ReactCountryFlag
-                      countryCode="GB"
-                      svg
-                      style={{
-                        width: "130%",
-                        height: "130%",
-                      }}
-                    />
-                  </FlagWrapper>
-                  United Kingdom
-                </CountrySection>
-              </VerticalWrapper>
-            </ProfileCard>
-            <SummaryCard>
-              <Row>
-                <VerticalWrapper style={{ alignItems: "start", flex: 1 }}>
-                  <p style={{ color: "#676767", fontSize: "16px" }}>
-                    Customer Name
-                  </p>
-                  <p style={{ color: "#000", fontSize: "18px" }}>Joe Wilson</p>
-                </VerticalWrapper>
-                <VerticalWrapper style={{ alignItems: "start", flex: 1 }}>
-                  <p style={{ color: "#676767", fontSize: "16px" }}>
-                    Business Relationship
-                  </p>
-                  <p style={{ color: "#000", fontSize: "18px" }}>Client</p>
-                </VerticalWrapper>
-                <VerticalWrapper style={{ alignItems: "start", flex: 1 }}>
-                  <p style={{ color: "#676767", fontSize: "16px" }}>
-                    Customer ID
-                  </p>
-                  <p style={{ color: "#000", fontSize: "18px" }}>23</p>
-                </VerticalWrapper>
-                <VerticalWrapper style={{ alignItems: "start", flex: 1 }}>
-                  <p style={{ color: "#676767", fontSize: "16px" }}>
-                    Date of Onboarding
-                  </p>
-                  <p style={{ color: "#000", fontSize: "18px" }}>23/05/2023</p>
-                </VerticalWrapper>
-              </Row>
-              <Row>
-                <VerticalWrapper style={{ alignItems: "start", flex: 1 }}>
-                  <p style={{ color: "#676767", fontSize: "16px" }}>
-                    KYC Review Date
-                  </p>
-                  <p style={{ color: "#000", fontSize: "18px" }}> 24/05/2023</p>
-                </VerticalWrapper>
-                <VerticalWrapper style={{ alignItems: "start", flex: 1 }}>
-                  <p style={{ color: "#676767", fontSize: "16px" }}>
-                    Country of Origin
-                  </p>
-                  <p style={{ color: "#000", fontSize: "18px" }}>
-                    United Kingdom
-                  </p>
-                </VerticalWrapper>
-                <VerticalWrapper style={{ alignItems: "start", flex: 2 }}>
-                  <p
-                    style={{
-                      color: "#676767",
-                      fontSize: "16px",
-                      marginBottom: "25px",
-                    }}
-                  >
-                    Risk Score
-                  </p>
-                  <Ruler>
-                    <ZeroMark>0</ZeroMark>
-                    <FiftyMark>50</FiftyMark>
-                    <SeventyMark>70</SeventyMark>
-                    <HundredMark>100</HundredMark>
-                    <Score
-                      color={
-                        score <= 50
-                          ? "#E54A4A"
-                          : score <= 70
-                          ? "#EAC040"
-                          : "#5FC163"
-                      }
-                      value={score}
-                    />
-                    <ScoreLabel
-                      color={
-                        score <= 50
-                          ? "#E54A4A"
-                          : score <= 70
-                          ? "#EAC040"
-                          : "#5FC163"
-                      }
-                      value={score}
-                    >
-                      {score}
-                    </ScoreLabel>
-                  </Ruler>
-                </VerticalWrapper>
-              </Row>
-            </SummaryCard>
-          </TopContainer>
-          <Container>
-            <RiskCard>
-              <Table data={riskProfile} />
-            </RiskCard>
-          </Container>
+          {isLoading ? (
+            <LoaderContainer>
+              <PuffLoader color="#644AE5" loading={isLoading} size={200} />
+            </LoaderContainer>
+          ) : (
+            <Container>
+              <TopContainer>
+                <ProfileCard>
+                  <ProfileWrapper>
+                    <Profile size={300} variant="Bold" />
+                  </ProfileWrapper>
+                  <VerticalWrapper>
+                    <p style={{ color: "#000", fontSize: "22px" }}>
+                      {customerDetails.customerInfoObject.customerName}
+                    </p>
+                    <p style={{ color: "#676767", fontSize: "16px" }}>
+                      {customerDetails.customerInfoObject.emailAddress}
+                    </p>
+                    <CountrySection>
+                      <FlagWrapper>
+                        <ReactCountryFlag
+                          countryCode="GB"
+                          svg
+                          style={{
+                            width: "130%",
+                            height: "130%",
+                          }}
+                        />
+                      </FlagWrapper>
+                      {customerDetails.customerInfoObject.countryOfOrigin}
+                    </CountrySection>
+                  </VerticalWrapper>
+                </ProfileCard>
+                <SummaryCard>
+                  <Row>
+                    <VerticalWrapper style={{ alignItems: "start", flex: 1 }}>
+                      {accountType === "Individual" ? (
+                        <p style={{ color: "#676767", fontSize: "16px" }}>
+                          Customer Name
+                        </p>
+                      ) : (
+                        <p style={{ color: "#676767", fontSize: "16px" }}>
+                          Business Name
+                        </p>
+                      )}
+                      {accountType === "Individual" ? (
+                        <p style={{ color: "#000", fontSize: "18px" }}>
+                          {customerDetails.customerInfoObject.customerName}
+                        </p>
+                      ) : (
+                        <p style={{ color: "#000", fontSize: "18px" }}>
+                          {customerDetails.customerInfoObject.businessName}
+                        </p>
+                      )}
+                    </VerticalWrapper>
+                    <VerticalWrapper style={{ alignItems: "start", flex: 1 }}>
+                      {accountType === "Individual" ? (
+                        <p style={{ color: "#676767", fontSize: "16px" }}>
+                          Business Relationship
+                        </p>
+                      ) : (
+                        <p style={{ color: "#676767", fontSize: "16px" }}>
+                          Legal Structure
+                        </p>
+                      )}
+                      {accountType === "Individual" ? (
+                        <p style={{ color: "#000", fontSize: "18px" }}>
+                          Client
+                        </p>
+                      ) : (
+                        <p style={{ color: "#000", fontSize: "18px" }}>
+                          {customerDetails.customerInfoObject.businessType}
+                        </p>
+                      )}
+                    </VerticalWrapper>
+                    <VerticalWrapper style={{ alignItems: "start", flex: 1 }}>
+                      {accountType === "Individual" ? (
+                        <p style={{ color: "#676767", fontSize: "16px" }}>
+                          Customer ID
+                        </p>
+                      ) : (
+                        <p style={{ color: "#676767", fontSize: "16px" }}>
+                          Company Number
+                        </p>
+                      )}
+                      {accountType === "Individual" ? (
+                        <p style={{ color: "#000", fontSize: "18px" }}>{id}</p>
+                      ) : (
+                        <p style={{ color: "#000", fontSize: "18px" }}>
+                          {customerDetails.customerInfoObject.companyNumber}
+                        </p>
+                      )}
+                    </VerticalWrapper>
+                    <VerticalWrapper style={{ alignItems: "start", flex: 1 }}>
+                      <p style={{ color: "#676767", fontSize: "16px" }}>
+                        Date of Onboarding
+                      </p>
+                      <p style={{ color: "#000", fontSize: "18px" }}>
+                        {customerDetails.customerInfoObject.onboardedOn}
+                      </p>
+                    </VerticalWrapper>
+                  </Row>
+                  <Row>
+                    <VerticalWrapper style={{ alignItems: "start", flex: 1 }}>
+                      <p style={{ color: "#676767", fontSize: "16px" }}>
+                        KYC Review Date
+                      </p>
+                      <p style={{ color: "#000", fontSize: "18px" }}>
+                        {customerDetails.customerInfoObject.kycReviewDate}
+                      </p>
+                    </VerticalWrapper>
+                    <VerticalWrapper style={{ alignItems: "start", flex: 1 }}>
+                      <p style={{ color: "#676767", fontSize: "16px" }}>
+                        Country of Origin
+                      </p>
+                      <p style={{ color: "#000", fontSize: "18px" }}>
+                        {customerDetails.customerInfoObject.countryOfOrigin}
+                      </p>
+                    </VerticalWrapper>
+                    <VerticalWrapper style={{ alignItems: "start", flex: 2, padding:'0px' }}>
+                      <p
+                        style={{
+                          color: "#676767",
+                          fontSize: "16px",
+                          marginBottom: "25px",
+                        }}
+                      >
+                        Risk Score
+                      </p>
+                      <Ruler>
+                        <ZeroMark>0</ZeroMark>
+                        <FiftyMark>30</FiftyMark>
+                        <SeventyMark>70</SeventyMark>
+                        <HundredMark>100</HundredMark>
+                        <Score
+                          color={
+                            score <= 30
+                              ? "#5FC163"
+                              : score <= 70
+                              ? "#EAC040"
+                              : "#E54A4A"
+                          }
+                          value={score}
+                        />
+                        <ScoreLabel
+                          color={
+                            score <= 30
+                              ? "#5FC163"
+                              : score <= 70
+                              ? "#EAC040"
+                              : "#E54A4A"
+                          }
+                          value={score}
+                        >
+                          {score}
+                        </ScoreLabel>
+                      </Ruler>
+                    </VerticalWrapper>
+                  </Row>
+                </SummaryCard>
+              </TopContainer>
+              <Container>
+                <RiskCard>
+                  <TableContentWrapper>
+                    <Table data={riskProfile} />
+                  </TableContentWrapper>
+                </RiskCard>
+              </Container>
+            </Container>
+          )}
         </ResponsiveWrapper>
       </ScrollableContainer>
     </>
@@ -503,7 +587,7 @@ const Ruler = styled.div`
   height: 5px;
   position: relative;
   border-radius: 5px;
-  background: linear-gradient(to right, #e54a4a 50%, #eac040 70%, #5fc163 100%);
+  background: linear-gradient(to right, #5fc163 15%, #eac040 70%, #e54a4a 100%);
 `;
 const RulerMark = styled.div`
   position: absolute;
@@ -513,19 +597,19 @@ const RulerMark = styled.div`
 `;
 const ZeroMark = styled(RulerMark)`
   left: 0;
-  color: #e54a4a;
+  color: #5fc163;
 `;
 const FiftyMark = styled(RulerMark)`
-  left: 50%;
-  color: #eac040;
+  left: 30%;
+  color: #5fc163;
 `;
 const SeventyMark = styled(RulerMark)`
   left: 70%;
-  color: #5fc163;
+  color: #eac040;
 `;
 const HundredMark = styled(RulerMark)`
   right: 0;
-  color: #5fc163;
+  color: #e54a4a;
 `;
 const Score = styled.div`
   position: absolute;
@@ -551,11 +635,41 @@ const ScoreLabel = styled.div`
 const RiskCard = styled(Card)`
   flex-direction: column;
   width: 100%;
-  height: 60vh;
+  height: 80vh;
   display: flex;
   padding: 20px;
   justify-content: space-between;
   align-items: center;
-  overflow-y:auto;
+  overflow-y: auto;
 `;
+const LoaderContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+`;
+const TableContentWrapper = styled.div`
+  height: 95%;
+  width: 100%;
+  overflow-y: auto;
+  padding:0
 
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    background: transparent;
+  }
+
+  &:hover::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 2px;
+  }
+
+  &:hover::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+`;

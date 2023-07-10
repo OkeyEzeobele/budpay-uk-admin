@@ -15,9 +15,14 @@ import PuffLoader from "react-spinners/PuffLoader";
 
 const RADIAN = Math.PI / 180;
 const data = [
-  { name: "A", value: 50, color:  "#5FC163"},
-  { name: "B", value: 30, color: "#EAC040" },
-  { name: "C", value: 20, color: "#E54A4A" },
+  { name: "A", value: 50, color: "#5FC163" },
+  { name: "B", value: 20, color: "#EAC040" },
+  { name: "C", value: 30, color: "#E54A4A" },
+];
+const dataaml = [
+  { name: "A", value: 30, color: "#5FC163" },
+  { name: "B", value: 40, color: "#EAC040" },
+  { name: "C", value: 30, color: "#E54A4A" },
 ];
 const cx = 37.5;
 const cy = 50;
@@ -222,6 +227,7 @@ export default function CustomerDetails() {
     setBasicInfo(location.state.item);
   }, [location.state]);
   const [customerDetails, setCustomerDetails] = useState([]);
+  const[businesses, setBusinesses] = useState([])
   const [isLoading, setIsLoading] = useState(true);
   const [toggleState, setToggleState] = useState("Individual");
   useEffect(() => {
@@ -231,11 +237,20 @@ export default function CustomerDetails() {
   // console.log(id);
   const navigate = useNavigate();
   const viewAmlCompliance = () => {
-    const amlId = "1729";
-    navigate(`/customers/details/${id}/aml-compliance`, { entityId: amlId });
+    let accountId
+    let accountType
+    if (toggleState ==="Individual"){
+      accountId = customerDetails.individualAccount.accountId
+      accountType = 'Individual'
+    }else{
+      accountId = activeBusiness.accountId
+      accountType = 'Business'
+    }
+    navigate(`/customers/details/${id}/aml-compliance?accountType=${accountType}&accountid=${accountId}`);
   };
   const viewJumioCompliance = () => {
-    navigate(`/customers/details/${id}/jumio-compliance`);
+    const accountId = customerDetails.individualAccount.accountId;
+    navigate(`/customers/details/${id}/jumio-compliance?accountid=${accountId}`);
   };
   const toggle = () => {
     setToggleState((prevState) =>
@@ -246,51 +261,55 @@ export default function CustomerDetails() {
   const [activeSwitchBusiness, setActiveSwitchBusiness] =
     useState("Transaction");
 
-    const getCustomerDetails = async () => {
-      let data ={
-        "channel": 1,
-        "ipAddress": "string",
-        "actor": 61,
-        "deviceId": "string",
-        "browser": "string",
-        "accountId": 0,
-        "userId": id
-      };
-      await api
-        .post(`/api/v2/customer/details`, data, {
-          headers: {
-            accept: "*/*",
-            "X-Auth-Signature": `179C050B170DAB3BEBB98603BD05FB47EE846336F5324FC6D9C34E82792A215EB65A6BC60BB7FEA38CD6389BF4E533E01B753A9787AA7E8E62FC6FA7B018B33C`,
-            "Content-Type": "application/json",
-          },
-        })
-        .then((response) => {
-          console.log(response);
-          if (response.data.isSuccessful === true) {
-            setCustomerDetails(response.data.returnedObjects);
-          } else {
-            toast.error(response.data.responseMessage, {
-              position: "top-right",
-              autoClose: 5000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-              progress: undefined,
-              theme: "colored",
-              style: {
-                backgroundColor: "#f44336",
-                color: "#fff",
-              },
-            });
-          }
-          setIsLoading(false);
-        })
-        .catch((error) => {
-          console.error(error);
-          setIsLoading(false);
-        });
+  const getCustomerDetails = async () => {
+    let data = {
+      channel: 1,
+      ipAddress: "string",
+      actor: 61,
+      deviceId: "string",
+      browser: "string",
+      accountId: 0,
+      userId: id,
     };
+    await api
+      .post(`/api/v2/customer/details`, data, {
+        headers: {
+          accept: "*/*",
+          "X-Auth-Signature": `179C050B170DAB3BEBB98603BD05FB47EE846336F5324FC6D9C34E82792A215EB65A6BC60BB7FEA38CD6389BF4E533E01B753A9787AA7E8E62FC6FA7B018B33C`,
+          "Content-Type": "application/json",
+        },
+      })
+      .then((response) => {
+        console.log(response);
+        if (response.data.isSuccessful === true) {
+          setCustomerDetails(response.data.returnedObjects);
+          setBusinesses(response.data.returnedObjects.businessAccounts)
+          if (response.data.returnedObjects.businessAccounts.length > 0) {
+            setActiveBusiness(response.data.returnedObjects.businessAccounts[0]);
+          }
+        } else {
+          toast.error(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#f44336",
+              color: "#fff",
+            },
+          });
+        }
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsLoading(false);
+      });
+  };
   const tableData = useMemo(() => createTableData(), []);
   const tableColumns = useMemo(
     () => [
@@ -322,12 +341,19 @@ export default function CustomerDetails() {
   const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
     tableInstance;
 
+  const [activeBusiness, setActiveBusiness] = useState(businesses[0]);
+
+  const handleTabClick = (business) => {
+    setActiveBusiness(business);
+    console.log(`active business: ${business}`);
+  };
   return (
     <>
       <TopNavbar />
+      <ToastContainer />
       <ScrollableContainer>
         <ResponsiveWrapper>
-          {isLoading? (
+          {isLoading ? (
             <LoaderContainer>
               <PuffLoader color="#644AE5" loading={isLoading} size={200} />
             </LoaderContainer>
@@ -338,7 +364,10 @@ export default function CustomerDetails() {
                   <UserDetails>
                     <ProfileWrapper>
                       {/* <Profile size={50} variant="Bold" /> */}
-                      <img src={customerDetails.customerInfo.selfie} alt={customerDetails.customerInfo.customerName}/>
+                      <img
+                        src={customerDetails.customerInfo.selfie}
+                        alt={customerDetails.customerInfo.customerName}
+                      />
                     </ProfileWrapper>
                     <AvatarSection>
                       <h3>{customerDetails.customerInfo.customerName}</h3>
@@ -357,7 +386,20 @@ export default function CustomerDetails() {
                 <ToggleSwitch
                   option1Text="Individual"
                   option2Text="Business"
-                  onToggleChange={toggle}
+                  onToggleChange={() => {
+                    if (
+                      customerDetails.businessAccounts !== null &&
+                      customerDetails.businessAccounts.length > 0
+                    ) {
+                      toggle();
+                    }
+                  }}
+                  disabled={
+                    !(
+                      customerDetails.businessAccounts !== null &&
+                      customerDetails.businessAccounts.length > 0
+                    )
+                  }
                 />
               </Row3>
               <Row>
@@ -366,31 +408,42 @@ export default function CustomerDetails() {
                     <Container2>
                       <Card2>
                         <Summary>
-                          <HeaderText>Total Balance</HeaderText>
-                          <h2>{formatNumber(customerDetails.totalBalance, 'gbp')}</h2>
+                          <HeaderText style={{ fontSize: "16px" }}>
+                            Total Balance
+                          </HeaderText>
                           <div
                             style={{
-                              color: "#0DAE0A",
                               display: "flex",
-                              alignItems: "stretch",
-                              fontSize: 18,
+                              alignItems: "baseline",
+                              justifyContent: "space-between",
+                              width: "100%",
                             }}
                           >
+                            <h1 style={{ width: "100%", padding: "0 10px" }}>
+                              {formatNumber(
+                                customerDetails.totalBalance,
+                                "gbp"
+                              )}
+                            </h1>
                             <div
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                backgroundColor: "#E3F9E3",
-                                borderRadius: "50%",
-                                width: "20px",
-                                height: "20px",
-                                marginRight: "5px",
-                              }}
+                              style={{ display: "flex", alignItems: "center" }}
                             >
-                              <ExportCircle size={14} color="#0DAE0A" />
+                              <div
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  backgroundColor: "#E3F9E3",
+                                  borderRadius: "50%",
+                                  width: "20px",
+                                  height: "20px",
+                                  marginRight: "5px",
+                                }}
+                              >
+                                <ExportCircle size={14} color="#0DAE0A" />
+                              </div>
+                              <h5 style={{ color: "#0DAE0A" }}>4.6%</h5>
                             </div>
-                            4.6%
                           </div>
                         </Summary>
                       </Card2>
@@ -466,7 +519,12 @@ export default function CustomerDetails() {
                                         ))}
                                       </Pie>
                                       {needle(
-                                        parseInt(customerDetails.individualAccount.jumioRiskScore),
+                                        customerDetails.individualAccount
+                                          ? parseInt(
+                                              customerDetails.individualAccount
+                                                .jumioRiskScore
+                                            )
+                                          : 0,
                                         data,
                                         45,
                                         70,
@@ -483,12 +541,19 @@ export default function CustomerDetails() {
                                         fontSize={10}
                                         fontWeight={"bold"}
                                       >
-                                        {`${parseInt(customerDetails.individualAccount.jumioRiskScore) || 0}`}
+                                        {customerDetails.individualAccount
+                                          ? `${
+                                              parseInt(
+                                                customerDetails
+                                                  .individualAccount
+                                                  .jumioRiskScore
+                                              ) || 0
+                                            }`
+                                          : 0}
                                       </text>
                                     </PieChart>
                                   </Wrapper>
                                 </CardRow>
-
                                 <Button onClick={viewJumioCompliance}>
                                   View
                                 </Button>
@@ -519,7 +584,7 @@ export default function CustomerDetails() {
                                         dataKey="value"
                                         startAngle={180}
                                         endAngle={0}
-                                        data={data}
+                                        data={dataaml}
                                         cx={50}
                                         cy={70}
                                         innerRadius={iR}
@@ -527,7 +592,7 @@ export default function CustomerDetails() {
                                         fill="#8884d8"
                                         stroke="none"
                                       >
-                                        {data.map((entry, index) => (
+                                        {dataaml.map((entry, index) => (
                                           <Cell
                                             key={`cell-${index}`}
                                             fill={entry.color}
@@ -535,8 +600,13 @@ export default function CustomerDetails() {
                                         ))}
                                       </Pie>
                                       {needle(
-                                        customerDetails.individualAccount.amlComplianceScore,
-                                        data,
+                                        customerDetails.individualAccount
+                                          ? parseInt(
+                                              customerDetails.individualAccount
+                                                .amlComplianceScore
+                                            )
+                                          : 0,
+                                        dataaml,
                                         45,
                                         70,
                                         iR,
@@ -552,7 +622,15 @@ export default function CustomerDetails() {
                                         fontSize={10}
                                         fontWeight={"bold"}
                                       >
-                                        {`${parseInt(customerDetails.individualAccount.amlComplianceScore) || 0}`}
+                                        {customerDetails.individualAccount
+                                          ? `${
+                                              parseInt(
+                                                customerDetails
+                                                  .individualAccount
+                                                  .amlComplianceScore
+                                              ) || 0
+                                            }`
+                                          : 0}
                                       </text>
                                     </PieChart>
                                   </Wrapper>
@@ -573,41 +651,79 @@ export default function CustomerDetails() {
                                   <CardContentWrapper>
                                     <Row2>
                                       <HeaderText>First Name</HeaderText>
-                                      <RegularText>{customerDetails.customerInfo.customerName.split(" ")[0]}</RegularText>
+                                      <RegularText>
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.customerInfo.customerName.split(
+                                              /\s+/
+                                            )[0]
+                                          : ""}
+                                      </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Last Name</HeaderText>
-                                      <RegularText>{customerDetails.customerInfo.customerName.split(" ")[1]}</RegularText>
+                                      <RegularText>
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.customerInfo.customerName.split(
+                                              /\s+/
+                                            )[1]
+                                          : ""}
+                                      </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Email Address</HeaderText>
                                       <RegularText>
-                                        {customerDetails.customerInfo.emailAddress}
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.customerInfo
+                                              .emailAddress
+                                          : ""}
                                       </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Phone Number</HeaderText>
-                                      <RegularText>{customerDetails.customerInfo.customerNumber}</RegularText>
+                                      <RegularText>
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.customerInfo
+                                              .customerNumber
+                                          : ""}
+                                      </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Date of Birth</HeaderText>
-                                      <RegularText>{customerDetails.individualAccount.dateOfBirth}</RegularText>
+                                      <RegularText>
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.individualAccount
+                                              .dateOfBirth
+                                          : ""}
+                                      </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>
                                         Country of Residence
                                       </HeaderText>
-                                      <RegularText>{customerDetails.individualAccount.countryOfResidence}</RegularText>
+                                      <RegularText>
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.individualAccount
+                                              .countryOfResidence
+                                          : ""}
+                                      </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Personal Address</HeaderText>
                                       <RegularText>
-                                      {customerDetails.individualAccount.personalAddress}
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.individualAccount
+                                              .personalAddress
+                                          : ""}
                                       </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Occupation</HeaderText>
-                                      <RegularText>{customerDetails.individualAccount.occupation}</RegularText>
+                                      <RegularText>
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.individualAccount
+                                              .occupation
+                                          : ""}
+                                      </RegularText>
                                     </Row2>
                                   </CardContentWrapper>
                                 </Column>
@@ -619,30 +735,58 @@ export default function CustomerDetails() {
                                         Purpose of Account
                                       </HeaderText>
                                       <RegularText>
-                                      {customerDetails.individualAccount.purposeOfAccount}
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.individualAccount
+                                              .purposeOfAccount
+                                          : ""}
                                       </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>KYC Verified</HeaderText>
-                                      <RegularText>{customerDetails.individualAccount.kycVerified}</RegularText>
+                                      <RegularText>
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.individualAccount
+                                              .kycVerified
+                                          : ""}
+                                      </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>
                                         KYC Verification Date
                                       </HeaderText>
-                                      <RegularText>{customerDetails.individualAccount.kycVerificationDate}</RegularText>
+                                      <RegularText>
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.individualAccount
+                                              .kycVerificationDate
+                                          : ""}
+                                      </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>KYC Outcome</HeaderText>
-                                      <RegularText>{customerDetails.individualAccount.kycOutcome}</RegularText>
+                                      <RegularText>
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.individualAccount
+                                              .kycOutcome
+                                          : ""}
+                                      </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Risk Category</HeaderText>
-                                      <RegularText>{customerDetails.individualAccount.riskCategory}</RegularText>
+                                      <RegularText>
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.individualAccount
+                                              .riskCategory
+                                          : ""}
+                                      </RegularText>
                                     </Row2>
                                     <Row2>
                                       <HeaderText>Date Onboarded</HeaderText>
-                                      <RegularText>{customerDetails.individualAccount.dateOnboarded}</RegularText>
+                                      <RegularText>
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.individualAccount
+                                              .dateOnboarded
+                                          : ""}
+                                      </RegularText>
                                     </Row2>
                                   </CardContentWrapper>
                                 </Column>
@@ -654,10 +798,9 @@ export default function CustomerDetails() {
                         <Row>
                           <Container3>
                             <Card5>
-                            <TransactionCardContent>
-                            <Table data={customerDetails.transactions} />
-                            </TransactionCardContent>
-                            
+                              <TransactionCardContent>
+                                <Table data={customerDetails.transactions} />
+                              </TransactionCardContent>
                             </Card5>
                           </Container3>
                         </Row>
@@ -666,63 +809,65 @@ export default function CustomerDetails() {
                   </Container3>
                 ) : (
                   <Container3>
-                    <Card1></Card1>
+                    <BusinessesCard>
+                      <div style={{ minWidth: "25%", display: "flex" }}>
+                        {businesses.map((business, index) => (
+                          <CountryWrapper key={index}>
+                            <CountryTab
+                              active={business.name === activeBusiness.name}
+                              onClick={() => handleTabClick(business)}
+                            >
+                              {business.name}
+                            </CountryTab>
+                            <Row></Row>
+                            <LineWrapper>
+                              <Line
+                                active={business.name === activeBusiness.name}
+                              />
+                            </LineWrapper>
+                          </CountryWrapper>
+                        ))}
+                      </div>
+                    </BusinessesCard>
                     <Container2>
                       <Card2>
                         <Summary>
-                          <HeaderText>Total Balance</HeaderText>
-                          <h2>{formatNumber()}</h2>
+                          <HeaderText style={{ fontSize: "16px" }}>
+                            Total Balance
+                          </HeaderText>
                           <div
                             style={{
-                              color: "#0DAE0A",
                               display: "flex",
-                              alignItems: "stretch",
-                              fontSize: 18,
+                              alignItems: "baseline",
+                              justifyContent: "space-between",
+                              width: "100%",
                             }}
                           >
+                            <h1 style={{ width: "100%", padding: "0 10px" }}>
+                              {formatNumber(
+                                customerDetails.totalBalance,
+                                "gbp"
+                              )}
+                            </h1>
                             <div
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                backgroundColor: "#E3F9E3",
-                                borderRadius: "50%",
-                                width: "20px",
-                                height: "20px",
-                                marginRight: "5px",
-                              }}
+                              style={{ display: "flex", alignItems: "center" }}
                             >
-                              <ExportCircle size={14} color="#0DAE0A" />
+                              <div
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  backgroundColor: "#E3F9E3",
+                                  borderRadius: "50%",
+                                  width: "20px",
+                                  height: "20px",
+                                  marginRight: "5px",
+                                }}
+                              >
+                                <ExportCircle size={14} color="#0DAE0A" />
+                              </div>
+                              <h5 style={{ color: "#0DAE0A" }}>4.6%</h5>
                             </div>
-                            4.6%
-                          </div>
-                        </Summary>
-                        <Summary>
-                          <HeaderText>Pending Balance</HeaderText>
-                          <h2>£2,350.50</h2>
-                          <div
-                            style={{
-                              color: "#0DAE0A",
-                              display: "flex",
-                              alignItems: "stretch",
-                              fontSize: 18,
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                backgroundColor: "#E3F9E3",
-                                borderRadius: "50%",
-                                width: "20px",
-                                height: "20px",
-                                marginRight: "5px",
-                              }}
-                            >
-                              <ExportCircle size={14} color="#0DAE0A" />
-                            </div>
-                            4.6%
                           </div>
                         </Summary>
                       </Card2>
@@ -783,7 +928,7 @@ export default function CustomerDetails() {
                                       dataKey="value"
                                       startAngle={180}
                                       endAngle={0}
-                                      data={data}
+                                      data={dataaml}
                                       cx={50}
                                       cy={70}
                                       innerRadius={iR}
@@ -791,7 +936,7 @@ export default function CustomerDetails() {
                                       fill="#8884d8"
                                       stroke="none"
                                     >
-                                      {data.map((entry, index) => (
+                                      {dataaml.map((entry, index) => (
                                         <Cell
                                           key={`cell-${index}`}
                                           fill={entry.color}
@@ -799,8 +944,8 @@ export default function CustomerDetails() {
                                       ))}
                                     </Pie>
                                     {needle(
-                                      value2,
-                                      data,
+                                      activeBusiness.amlComplianceScore,
+                                      dataaml,
                                       45,
                                       70,
                                       iR,
@@ -816,7 +961,7 @@ export default function CustomerDetails() {
                                       fontSize={10}
                                       fontWeight={"bold"}
                                     >
-                                      {`${value3}`}
+                                      {`${activeBusiness.amlComplianceScore}`}
                                     </text>
                                   </PieChart>
                                 </Wrapper>
@@ -825,7 +970,7 @@ export default function CustomerDetails() {
                             </Summary>
                           </Card4>
                         </Container3>
-                        <Card>
+                        <Card >
                           <CardContent>
                             <CardTitleTextBig>
                               Business Details
@@ -834,42 +979,42 @@ export default function CustomerDetails() {
                               <Column>
                                 <CardContentWrapper>
                                   <Row2>
-                                    <HeaderText>First Name</HeaderText>
-                                    <RegularText>Joe</RegularText>
+                                    <HeaderText>Business Legal Name</HeaderText>
+                                    <RegularText>{activeBusiness.name}</RegularText>
                                   </Row2>
                                   <Row2>
-                                    <HeaderText>Last Name</HeaderText>
-                                    <RegularText>Wilson</RegularText>
+                                    <HeaderText>Date of Incorporation</HeaderText>
+                                    <RegularText>{activeBusiness.dateOfIncorporation}</RegularText>
                                   </Row2>
                                   <Row2>
-                                    <HeaderText>Email Address</HeaderText>
+                                    <HeaderText>License Number</HeaderText>
                                     <RegularText>
-                                      joewilson@gmail.com
+                                      {activeBusiness.licenseNumber}
                                     </RegularText>
                                   </Row2>
                                   <Row2>
-                                    <HeaderText>Phone Number</HeaderText>
-                                    <RegularText>2348123456789</RegularText>
+                                    <HeaderText>Business Type</HeaderText>
+                                    <RegularText>{activeBusiness.businessType}</RegularText>
                                   </Row2>
                                   <Row2>
-                                    <HeaderText>Date of Birth</HeaderText>
-                                    <RegularText>22 May, 2023</RegularText>
+                                    <HeaderText>Nature Of Business</HeaderText>
+                                    <RegularText>{activeBusiness.businessSector}</RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>
-                                      Country of Residence
+                                      Country of Registration
                                     </HeaderText>
-                                    <RegularText>United Kingdom</RegularText>
+                                    <RegularText>{activeBusiness.countryOfRegistration}</RegularText>
                                   </Row2>
                                   <Row2>
-                                    <HeaderText>Personal Address</HeaderText>
+                                    <HeaderText>Registered Office Address</HeaderText>
                                     <RegularText>
-                                      1600 Pennsylvania Avenue
+                                      {activeBusiness.registeredAddress}
                                     </RegularText>
                                   </Row2>
                                   <Row2>
-                                    <HeaderText>Occupation</HeaderText>
-                                    <RegularText>Self Employed</RegularText>
+                                    <HeaderText>Operating Address</HeaderText>
+                                    <RegularText>{activeBusiness.operatingAddress}</RegularText>
                                   </Row2>
                                 </CardContentWrapper>
                               </Column>
@@ -877,32 +1022,36 @@ export default function CustomerDetails() {
                               <Column>
                                 <CardContentWrapper>
                                   <Row2>
-                                    <HeaderText>Purpose of Account</HeaderText>
+                                    <HeaderText>Is Business Regulated?</HeaderText>
                                     <RegularText>
-                                      Payment Collection, Virtual Wallet
+                                      {activeBusiness.isBusinessRegulated}
                                     </RegularText>
                                   </Row2>
                                   <Row2>
-                                    <HeaderText>KYC Verified</HeaderText>
-                                    <RegularText>Yes</RegularText>
+                                    <HeaderText>Purpose of Account</HeaderText>
+                                    <RegularText>{activeBusiness.purposeOfAccount}</RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>
-                                      KYC Verification Date
+                                      KYC Verified?
                                     </HeaderText>
-                                    <RegularText>27 May, 2023</RegularText>
+                                    <RegularText>{activeBusiness.kycVerified}</RegularText>
+                                  </Row2>
+                                  <Row2>
+                                    <HeaderText>KYC Verification Date</HeaderText>
+                                    <RegularText>{activeBusiness.kycVerificationDate}</RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>KYC Outcome</HeaderText>
-                                    <RegularText>Passed</RegularText>
+                                    <RegularText>{activeBusiness.kycOutcome}</RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>Risk Category</HeaderText>
-                                    <RegularText>Medium(CDD)</RegularText>
+                                    <RegularText>{activeBusiness.riskCategory}</RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>Date Onboarded</HeaderText>
-                                    <RegularText>26 May, 2023</RegularText>
+                                    <RegularText>{activeBusiness.dateOnboarded}</RegularText>
                                   </Row2>
                                 </CardContentWrapper>
                               </Column>
@@ -1088,6 +1237,23 @@ const Card1 = styled.div`
   width: 100%;
   height: 14vf;
   margin-bottom: 10px;
+  position: relative;
+  &:not(:first-child) {
+    margin-top: 10px;
+  }
+`;
+const BusinessesCard = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: ${({ backgroundColor }) => backgroundColor || "#fff"};
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 11px;
+  padding: 30px 20px 0 20px;
+  width: 100%;
+  height: 18vf;
+  margin-bottom: 10px;
+  position: relative;
   &:not(:first-child) {
     margin-top: 10px;
   }
@@ -1100,7 +1266,7 @@ const Card2 = styled.div`
   background-color: ${({ backgroundColor }) => backgroundColor || "#fff"};
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 11px;
-  padding: 30px;
+  padding: 20px;
   width: 33%;
   height: 20vh;
   &:not(:last-child) {
@@ -1161,7 +1327,8 @@ const TransactionCardContent = styled.div`
 
   &::-webkit-scrollbar-thumb:hover {
     background: #555;
-}`;
+  }
+`;
 const UserDetails = styled.div`
   flex-direction: row;
   display: flex;
@@ -1221,6 +1388,7 @@ const ProfileWrapper = styled.div`
 const Summary = styled.div`
   display: flex;
   height: 90%;
+  width: 100%;
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
@@ -1236,7 +1404,7 @@ const RegularText = styled.p`
   font-size: 12px;
   width: 100%;
   word-wrap: break-word;
-  word-break: break-all;
+  ${'' /* word-break: break-all; */}
   margin-bottom: 5px;
 `;
 const HeaderText2 = styled.p`
@@ -1315,7 +1483,7 @@ const CardContentWrapper = styled.div`
   align-items: flex-start;
   display: flex;
   justify-content: flex-start;
-  padding: 40px;
+  padding: 40px 5px;
   gap: 20px;
 `;
 const TableWrapper = styled.div`
@@ -1364,4 +1532,33 @@ const LoaderContainer = styled.div`
   justify-content: center;
   align-items: center;
   height: 50vh;
+`;
+const CountryWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-contents: space-between;
+  flex: 1;
+  position: relative;
+  bottom: 0;
+`;
+const CountryTab = styled.p`
+  color: ${({ active }) => (active ? "#644ae5" : "#747474")};
+  cursor: pointer;
+  font-weight: 700;
+  font-size:12px;
+  padding: 0 10px
+`;
+const LineWrapper = styled.div`
+  display: flex;
+  justify-content: space-between;
+  height: 2px;
+  width: 100%;
+`;
+const Line = styled.div`
+  flex-grow: 1;
+  height: 100%;
+  background-color: ${({ active }) =>
+    active ? "#644ae5" : "rgba(0, 0, 0, 0.1)"};
+  width: 100%;
 `;
