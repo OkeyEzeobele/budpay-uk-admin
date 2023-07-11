@@ -179,7 +179,7 @@ export default function JumioCompliance() {
                         {customerDetails.identityVerification.usability}
                       </ValueWrapper>
                     ) : customerDetails.identityVerification.usability ===
-                      "FAILED" ? (
+                      "FAILED" ||customerDetails.identityVerification.usability ==="NOT_EXECUTED"? (
                       <ValueWrapper
                         style={{
                           backgroundColor: "rgba(174, 10, 10, 0.5)",
@@ -212,7 +212,7 @@ export default function JumioCompliance() {
                         {customerDetails.identityVerification.dataChecks}
                       </ValueWrapper>
                     ) : customerDetails.identityVerification.dataChecks ===
-                      "FAILED" ? (
+                      "FAILED" || customerDetails.identityVerification.dataChecks ==="NOT_EXECUTED"? (
                       <ValueWrapper
                         style={{
                           backgroundColor: "rgba(174, 10, 10, 0.5)",
@@ -245,7 +245,7 @@ export default function JumioCompliance() {
                         {customerDetails.identityVerification.imageChecks}
                       </ValueWrapper>
                     ) : customerDetails.identityVerification.imageChecks ===
-                      "FAILED" ? (
+                      "FAILED" ||customerDetails.identityVerification.imageChecks==="NOT_EXECUTED"? (
                       <ValueWrapper
                         style={{
                           backgroundColor: "rgba(174, 10, 10, 0.5)",
@@ -278,7 +278,7 @@ export default function JumioCompliance() {
                         {customerDetails.identityVerification.extraction}
                       </ValueWrapper>
                     ) : customerDetails.identityVerification.extraction ===
-                      "FAILED" ? (
+                      "FAILED" ||customerDetails.identityVerification.extraction ==="NOT_EXECUTED"? (
                       <ValueWrapper
                         style={{
                           backgroundColor: "rgba(174, 10, 10, 0.5)",
@@ -311,7 +311,7 @@ export default function JumioCompliance() {
                         {customerDetails.identityVerification.similarity}
                       </ValueWrapper>
                     ) : customerDetails.identityVerification.similarity ===
-                      "FAILED" ? (
+                      "FAILED" ||customerDetails.identityVerification.similarity ==="NOT_EXECUTED" ? (
                       <ValueWrapper
                         style={{
                           backgroundColor: "rgba(174, 10, 10, 0.5)",
@@ -407,7 +407,7 @@ export default function JumioCompliance() {
                         {customerDetails.selfCredentials.usability}
                       </ValueWrapper>
                     ) : customerDetails.selfCredentials.usability ===
-                      "FAILED" ? (
+                      "FAILED" ||customerDetails.selfCredentials.usability === 'NOT_EXECUTED'? (
                       <ValueWrapper
                         style={{
                           backgroundColor: "rgba(174, 10, 10, 0.5)",
@@ -439,7 +439,7 @@ export default function JumioCompliance() {
                         {customerDetails.selfCredentials.similarity}
                       </ValueWrapper>
                     ) : customerDetails.selfCredentials.similarity ===
-                      "FAILED" ? (
+                      "FAILED"||customerDetails.selfCredentials.similarity ==='NOT_EXECUTED' ? (
                       <ValueWrapper
                         style={{
                           backgroundColor: "rgba(174, 10, 10, 0.5)",
@@ -480,7 +480,7 @@ export default function JumioCompliance() {
                         <Dot />
                         {customerDetails.faceMap.usability}
                       </ValueWrapper>
-                    ) : customerDetails.faceMap.usability === "FAILED" ? (
+                    ) : customerDetails.faceMap.usability === "FAILED"|| customerDetails.faceMap.usability === "NOT_EXECUTED" ? (
                       <ValueWrapper
                         style={{
                           backgroundColor: "rgba(174, 10, 10, 0.5)",
@@ -511,7 +511,7 @@ export default function JumioCompliance() {
                         <Dot />
                         {customerDetails.faceMap.liveness}
                       </ValueWrapper>
-                    ) : customerDetails.faceMap.liveness === "FAILED" ? (
+                    ) : customerDetails.faceMap.liveness === "FAILED" || customerDetails.faceMap.liveness === "NOT_EXECUTED" ? (
                       <ValueWrapper
                         style={{
                           backgroundColor: "rgba(174, 10, 10, 0.5)",
@@ -569,80 +569,102 @@ export default function JumioCompliance() {
                   </p>
                   <Row>
                     <KeyText>Status</KeyText>
-                    {customerDetails.screening.status === "SUCCESS" ? (
-                      <ValueWrapper>
-                        <Dot />
-                        {customerDetails.screening.status}
-                      </ValueWrapper>
-                    ) : customerDetails.screening.status === "FAILED" ||
-                      customerDetails.screening.status === "FAILURE" ? (
-                      <ValueWrapper
-                        style={{
-                          backgroundColor: "rgba(174, 10, 10, 0.5)",
-                          color: "#AE0A0A",
-                          border: " 1px solid #AE0A0A",
-                        }}
-                      >
-                        <Dot style={{ backgroundColor: "#AE0A0A" }} />
-                        {customerDetails.screening.status}
-                      </ValueWrapper>
+                    {customerDetails && customerDetails.screening ? (
+                      customerDetails.screening.status === "SUCCESS" ? (
+                        <ValueWrapper>
+                          <Dot />
+                          {customerDetails.screening.status}
+                        </ValueWrapper>
+                      ) : customerDetails.screening.status === "FAILED" ||
+                        customerDetails.screening.status === "FAILURE" ? (
+                        <ValueWrapper
+                          style={{
+                            backgroundColor: "rgba(174, 10, 10, 0.5)",
+                            color: "#AE0A0A",
+                            border: " 1px solid #AE0A0A",
+                          }}
+                        >
+                          <Dot style={{ backgroundColor: "#AE0A0A" }} />
+                          {customerDetails.screening.status}
+                        </ValueWrapper>
+                      ) : (
+                        <ValueWrapper
+                          style={{
+                            backgroundColor: "rgba(174, 128, 10, 0.5)",
+                            color: "#AE800A",
+                            border: " 1px solid #AE800A",
+                          }}
+                        >
+                          <Dot style={{ backgroundColor: "#AE800A" }} />
+                          {customerDetails.screening.status}
+                        </ValueWrapper>
+                      )
                     ) : (
-                      <ValueWrapper
-                        style={{
-                          backgroundColor: "rgba(174, 128, 10, 0.5)",
-                          color: "#AE800A",
-                          border: " 1px solid #AE800A",
-                        }}
-                      >
-                        <Dot style={{ backgroundColor: "#AE800A" }} />
-                        {customerDetails.screening.status}
-                      </ValueWrapper>
+                      <ValueText>No Screening Data</ValueText>
                     )}
                   </Row>
-                  <Row>
-                    <KeyText>Search Date</KeyText>
-                    <ValueText>
-                      {customerDetails.screening.searchDate}
-                    </ValueText>
-                  </Row>
-                  <Row>
-                    <KeyText>Search Reference</KeyText>
-                    <ValueText>
-                      {customerDetails.screening.searchReference}
-                    </ValueText>
-                  </Row>
-                  <Row>
-                    <KeyText>Vendor</KeyText>
-                    <ValueText>{customerDetails.screening.vendor}</ValueText>
-                  </Row>
-                  <Row>
-                    <KeyText>Count of Results</KeyText>
-                    <ValueText>
-                      {customerDetails.screening.countOfResult}
-                    </ValueText>
-                  </Row>
-                  <Row>
-                    <KeyText>Search ID</KeyText>
-                    <ValueText>{customerDetails.screening.searchId}</ValueText>
-                  </Row>
-                  <Row>
-                    <KeyText>Search Result Url</KeyText>
-                    <ValueText
-                      style={{
-                        color: "#644AE5",
-                        cursor: "pointer",
-                        width: "65%",
-                      }}
-                      onClick={() =>
-                        window.open(
-                          customerDetails.screening.searchResultUrl,
-                          "_blank"
-                        )
-                      }
-                    >
-                      {customerDetails.screening.searchResultUrl}
-                    </ValueText>
-                  </Row>
+                  {customerDetails && customerDetails.screening ? (
+                    <>
+                      <Row>
+                        <KeyText>Search Date</KeyText>
+                        <ValueText>
+                          {customerDetails.screening.searchDate || ""}
+                        </ValueText>
+                      </Row>
+                      <Row>
+                        <KeyText>Search Reference</KeyText>
+                        <ValueText>
+                          {customerDetails.screening.searchReference ||
+                            ""}
+                        </ValueText>
+                      </Row>
+                      <Row>
+                        <KeyText>Vendor</KeyText>
+                        <ValueText>
+                          {customerDetails.screening.vendor || ""}
+                        </ValueText>
+                      </Row>
+                      <Row>
+                        <KeyText>Count of Results</KeyText>
+                        <ValueText>
+                          {customerDetails.screening.countOfResult ||
+                            ""}
+                        </ValueText>
+                      </Row>
+                      <Row>
+                        <KeyText>Search ID</KeyText>
+                        <ValueText>
+                          {customerDetails.screening.searchId || ""}
+                        </ValueText>
+                      </Row>
+                      {customerDetails.screening.status?.toLowerCase() ==
+                      "success" ? null : (
+                        <Row>
+                          <KeyText>Search Result Url</KeyText>
+                          <ValueText
+                            style={{
+                              color: "#644AE5",
+                              cursor: "pointer",
+                              width: "65%",
+                            }}
+                            onClick={() =>
+                              window.open(
+                                customerDetails.screening.searchResultUrl,
+                                "_blank"
+                              )
+                            }
+                          >
+                            {customerDetails.screening.searchResultUrl ||
+                              ""}
+                          </ValueText>
+                        </Row>
+                      )}
+                    </>
+                  ) : (
+                    <Row>
+                      <ValueText>No Screening Data</ValueText>
+                    </Row>
+                  )}
                   <Spacer />
                   <p
                     style={{
@@ -749,11 +771,19 @@ const Ruler = styled.div`
   height: 5px;
   position: relative;
   border-radius: 5px;
-  background: linear-gradient(to right, #5fc163 40%, #eac040 70%, #e54a4a 100%);
+  background: linear-gradient(
+    to right,
+    #5fc163 0%,
+    #5fc163 50%,
+    #eac040 50%,
+    #eac040 70%,
+    #e54a4a 70%,
+    #e54a4a 100%
+  );
 `;
 const RulerMark = styled.div`
   position: absolute;
-  top: 5px;
+  bottom: 5px;
   font-size: 9px;
   font-weight: bold;
 `;
@@ -779,12 +809,12 @@ const Score = styled.div`
   width: 2px;
   height: 15px;
   background-color: ${(props) => props.color};
-  left: ${(props) => props.value}%;
+  left: ${(props) => Math.min(Math.max(props.value, 0), 100)}%;
 `;
 const ScoreLabel = styled.div`
   position: absolute;
   color: ${(props) => props.color};
-  left: ${(props) => props.value}%;
+  left: ${(props) => Math.min(Math.max(props.value, 0), 100)}%;
   top: 20px;
   background: ${(props) => chroma(props.color).alpha(0.2)};
   border-radius: 20px;

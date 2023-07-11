@@ -587,11 +587,11 @@ const Ruler = styled.div`
   height: 5px;
   position: relative;
   border-radius: 5px;
-  background: linear-gradient(to right, #5fc163 15%, #eac040 70%, #e54a4a 100%);
+  background: linear-gradient(to right, #5fc163 0%, #5fc163 30%, #eac040 30%, #eac040 70%, #e54a4a 70%, #e54a4a 100%);
 `;
 const RulerMark = styled.div`
   position: absolute;
-  top: 5px;
+  bottom: 5px;
   font-size: 9px;
   font-weight: bold;
 `;
@@ -617,12 +617,12 @@ const Score = styled.div`
   width: 2px;
   height: 15px;
   background-color: ${(props) => props.color};
-  left: ${(props) => props.value}%;
+  left: ${(props) => Math.min(Math.max(props.value, 0), 100)}%;
 `;
 const ScoreLabel = styled.div`
   position: absolute;
   color: ${(props) => props.color};
-  left: ${(props) => props.value}%;
+  left: ${(props) => Math.min(Math.max(props.value, 0), 100)}%;
   top: 20px;
   background: ${(props) => chroma(props.color).alpha(0.2)};
   border-radius: 20px;

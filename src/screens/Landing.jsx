@@ -821,11 +821,11 @@ export default function Landing() {
                 <TitleText>Customers</TitleText>
               </Row>
               {isLoading ? (
-                <Column>
+                
                   <LoaderContainer>
                     <PuffLoader color="#644AE5" loading={isLoading} size={50} />
                   </LoaderContainer>
-                </Column>
+         
               ) : (
                 <ResponsiveContainer width="50%" height="50%">
                   <PieChart>

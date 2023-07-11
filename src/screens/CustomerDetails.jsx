@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import api from "../api";
@@ -28,9 +28,6 @@ const cx = 37.5;
 const cy = 50;
 const iR = 12.5;
 const oR = 25;
-const value = 74;
-const value2 = 59;
-const value3 = 72;
 const needle = (value, data, cx, cy, iR, oR, color) => {
   const ang = 180.0 * (1 - value / 100);
   const length = (iR + 2 * oR) / 3;
@@ -55,17 +52,7 @@ const needle = (value, data, cx, cy, iR, oR, color) => {
     />,
   ];
 };
-const createTableData = (length = 20) => {
-  return Array.from({ length }, (_, index) => {
-    return {
-      col1: `Column 1 Row ${index + 1}`,
-      col2: `Column 2 Row ${index + 1}`,
-      col3: `Column 3 Row ${index + 1}`,
-      col4: `Column 4 Row ${index + 1}`,
-      col5: `Column 5 Row ${index + 1}`,
-    };
-  });
-};
+
 const Table = ({ data }) => (
   <table style={{ width: "100%", borderCollapse: "collapse" }}>
     <thead>
@@ -227,9 +214,10 @@ export default function CustomerDetails() {
     setBasicInfo(location.state.item);
   }, [location.state]);
   const [customerDetails, setCustomerDetails] = useState([]);
-  const[businesses, setBusinesses] = useState([])
+  const [businesses, setBusinesses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [toggleState, setToggleState] = useState("Individual");
+  const [currency, setCurrency] = useState("GBP");
   useEffect(() => {
     getCustomerDetails();
   }, []);
@@ -237,20 +225,24 @@ export default function CustomerDetails() {
   // console.log(id);
   const navigate = useNavigate();
   const viewAmlCompliance = () => {
-    let accountId
-    let accountType
-    if (toggleState ==="Individual"){
-      accountId = customerDetails.individualAccount.accountId
-      accountType = 'Individual'
-    }else{
-      accountId = activeBusiness.accountId
-      accountType = 'Business'
+    let accountId;
+    let accountType;
+    if (toggleState === "Individual") {
+      accountId = customerDetails.individualAccount.accountId;
+      accountType = "Individual";
+    } else {
+      accountId = activeBusiness.accountId;
+      accountType = "Business";
     }
-    navigate(`/customers/details/${id}/aml-compliance?accountType=${accountType}&accountid=${accountId}`);
+    navigate(
+      `/customers/details/${id}/aml-compliance?accountType=${accountType}&accountid=${accountId}`
+    );
   };
   const viewJumioCompliance = () => {
     const accountId = customerDetails.individualAccount.accountId;
-    navigate(`/customers/details/${id}/jumio-compliance?accountid=${accountId}`);
+    navigate(
+      `/customers/details/${id}/jumio-compliance?accountid=${accountId}`
+    );
   };
   const toggle = () => {
     setToggleState((prevState) =>
@@ -280,12 +272,14 @@ export default function CustomerDetails() {
         },
       })
       .then((response) => {
-        console.log(response);
+        // console.log(response);
         if (response.data.isSuccessful === true) {
           setCustomerDetails(response.data.returnedObjects);
-          setBusinesses(response.data.returnedObjects.businessAccounts)
+          setBusinesses(response.data.returnedObjects.businessAccounts);
           if (response.data.returnedObjects.businessAccounts.length > 0) {
-            setActiveBusiness(response.data.returnedObjects.businessAccounts[0]);
+            setActiveBusiness(
+              response.data.returnedObjects.businessAccounts[0]
+            );
           }
         } else {
           toast.error(response.data.responseMessage, {
@@ -310,36 +304,6 @@ export default function CustomerDetails() {
         setIsLoading(false);
       });
   };
-  const tableData = useMemo(() => createTableData(), []);
-  const tableColumns = useMemo(
-    () => [
-      {
-        Header: "Transaction",
-        accessor: "col1", // accessor is the "key" in the data
-      },
-      {
-        Header: "Category",
-        accessor: "col2",
-      },
-      {
-        Header: "Amount",
-        accessor: "col3",
-      },
-      {
-        Header: "Status",
-        accessor: "col4",
-      },
-      {
-        Header: "Date",
-        accessor: "col5",
-      },
-    ],
-    []
-  );
-  const tableInstance = useTable({ columns: tableColumns, data: tableData });
-
-  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
-    tableInstance;
 
   const [activeBusiness, setActiveBusiness] = useState(businesses[0]);
 
@@ -420,10 +384,15 @@ export default function CustomerDetails() {
                             }}
                           >
                             <h1 style={{ width: "100%", padding: "0 10px" }}>
-                              {formatNumber(
-                                customerDetails.totalBalance,
-                                "gbp"
-                              )}
+                              {customerDetails.individualAccount
+                                ? formatNumber(
+                                    customerDetails.individualAccount.totalBalance.find(
+                                      (account) =>
+                                        account.currencyCode === currency
+                                    )?.amount ?? 0,
+                                    currency
+                                  )
+                                : formatNumber(0, currency)}
                             </h1>
                             <div
                               style={{ display: "flex", alignItems: "center" }}
@@ -501,8 +470,8 @@ export default function CustomerDetails() {
                                     >
                                       <Pie
                                         dataKey="value"
-                                        startAngle={180}
-                                        endAngle={0}
+                                        startAngle={190}
+                                        endAngle={-10}
                                         data={data}
                                         cx={50}
                                         cy={70}
@@ -582,8 +551,8 @@ export default function CustomerDetails() {
                                     >
                                       <Pie
                                         dataKey="value"
-                                        startAngle={180}
-                                        endAngle={0}
+                                        startAngle={190}
+                                        endAngle={-10}
                                         data={dataaml}
                                         cx={50}
                                         cy={70}
@@ -682,8 +651,8 @@ export default function CustomerDetails() {
                                       <HeaderText>Phone Number</HeaderText>
                                       <RegularText>
                                         {customerDetails.individualAccount
-                                          ? customerDetails.customerInfo
-                                              .customerNumber
+                                          ? customerDetails.individualAccount
+                                              .phoneNumber
                                           : ""}
                                       </RegularText>
                                     </Row2>
@@ -788,6 +757,17 @@ export default function CustomerDetails() {
                                           : ""}
                                       </RegularText>
                                     </Row2>
+                                    <Row2>
+                                      <HeaderText>
+                                        Next Assessment Date
+                                      </HeaderText>
+                                      <RegularText>
+                                        {customerDetails.individualAccount
+                                          ? customerDetails.individualAccount
+                                              .nextAssessmentDate
+                                          : ""}
+                                      </RegularText>
+                                    </Row2>
                                   </CardContentWrapper>
                                 </Column>
                               </Row2>
@@ -799,7 +779,14 @@ export default function CustomerDetails() {
                           <Container3>
                             <Card5>
                               <TransactionCardContent>
-                                <Table data={customerDetails.transactions} />
+                                <Table
+                                  data={
+                                    customerDetails.individualAccount
+                                      ? customerDetails.individualAccount
+                                          .transactions
+                                      : []
+                                  }
+                                />
                               </TransactionCardContent>
                             </Card5>
                           </Container3>
@@ -845,8 +832,10 @@ export default function CustomerDetails() {
                           >
                             <h1 style={{ width: "100%", padding: "0 10px" }}>
                               {formatNumber(
-                                customerDetails.totalBalance,
-                                "gbp"
+                                activeBusiness.totalBalance.find(
+                                  (account) => account.currencyCode === currency
+                                )?.amount ?? 0,
+                                currency
                               )}
                             </h1>
                             <div
@@ -926,8 +915,8 @@ export default function CustomerDetails() {
                                   >
                                     <Pie
                                       dataKey="value"
-                                      startAngle={180}
-                                      endAngle={0}
+                                      startAngle={190}
+                                      endAngle={-10}
                                       data={dataaml}
                                       cx={50}
                                       cy={70}
@@ -970,7 +959,7 @@ export default function CustomerDetails() {
                             </Summary>
                           </Card4>
                         </Container3>
-                        <Card >
+                        <Card>
                           <CardContent>
                             <CardTitleTextBig>
                               Business Details
@@ -980,11 +969,17 @@ export default function CustomerDetails() {
                                 <CardContentWrapper>
                                   <Row2>
                                     <HeaderText>Business Legal Name</HeaderText>
-                                    <RegularText>{activeBusiness.name}</RegularText>
+                                    <RegularText>
+                                      {activeBusiness.name}
+                                    </RegularText>
                                   </Row2>
                                   <Row2>
-                                    <HeaderText>Date of Incorporation</HeaderText>
-                                    <RegularText>{activeBusiness.dateOfIncorporation}</RegularText>
+                                    <HeaderText>
+                                      Date of Incorporation
+                                    </HeaderText>
+                                    <RegularText>
+                                      {activeBusiness.dateOfIncorporation}
+                                    </RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>License Number</HeaderText>
@@ -994,27 +989,37 @@ export default function CustomerDetails() {
                                   </Row2>
                                   <Row2>
                                     <HeaderText>Business Type</HeaderText>
-                                    <RegularText>{activeBusiness.businessType}</RegularText>
+                                    <RegularText>
+                                      {activeBusiness.businessType}
+                                    </RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>Nature Of Business</HeaderText>
-                                    <RegularText>{activeBusiness.businessSector}</RegularText>
+                                    <RegularText>
+                                      {activeBusiness.businessSector}
+                                    </RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>
                                       Country of Registration
                                     </HeaderText>
-                                    <RegularText>{activeBusiness.countryOfRegistration}</RegularText>
+                                    <RegularText>
+                                      {activeBusiness.countryOfRegistration}
+                                    </RegularText>
                                   </Row2>
                                   <Row2>
-                                    <HeaderText>Registered Office Address</HeaderText>
+                                    <HeaderText>
+                                      Registered Office Address
+                                    </HeaderText>
                                     <RegularText>
                                       {activeBusiness.registeredAddress}
                                     </RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>Operating Address</HeaderText>
-                                    <RegularText>{activeBusiness.operatingAddress}</RegularText>
+                                    <RegularText>
+                                      {activeBusiness.operatingAddress}
+                                    </RegularText>
                                   </Row2>
                                 </CardContentWrapper>
                               </Column>
@@ -1022,36 +1027,58 @@ export default function CustomerDetails() {
                               <Column>
                                 <CardContentWrapper>
                                   <Row2>
-                                    <HeaderText>Is Business Regulated?</HeaderText>
+                                    <HeaderText>
+                                      Is Business Regulated?
+                                    </HeaderText>
                                     <RegularText>
                                       {activeBusiness.isBusinessRegulated}
                                     </RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>Purpose of Account</HeaderText>
-                                    <RegularText>{activeBusiness.purposeOfAccount}</RegularText>
+                                    <RegularText>
+                                      {activeBusiness.purposeOfAccount}
+                                    </RegularText>
+                                  </Row2>
+                                  <Row2>
+                                    <HeaderText>KYC Verified?</HeaderText>
+                                    <RegularText>
+                                      {activeBusiness.kycVerified}
+                                    </RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>
-                                      KYC Verified?
+                                      KYC Verification Date
                                     </HeaderText>
-                                    <RegularText>{activeBusiness.kycVerified}</RegularText>
-                                  </Row2>
-                                  <Row2>
-                                    <HeaderText>KYC Verification Date</HeaderText>
-                                    <RegularText>{activeBusiness.kycVerificationDate}</RegularText>
+                                    <RegularText>
+                                      {activeBusiness.kycVerificationDate}
+                                    </RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>KYC Outcome</HeaderText>
-                                    <RegularText>{activeBusiness.kycOutcome}</RegularText>
+                                    <RegularText>
+                                      {activeBusiness.kycOutcome}
+                                    </RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>Risk Category</HeaderText>
-                                    <RegularText>{activeBusiness.riskCategory}</RegularText>
+                                    <RegularText>
+                                      {activeBusiness.riskCategory}
+                                    </RegularText>
                                   </Row2>
                                   <Row2>
                                     <HeaderText>Date Onboarded</HeaderText>
-                                    <RegularText>{activeBusiness.dateOnboarded}</RegularText>
+                                    <RegularText>
+                                      {activeBusiness.dateOnboarded}
+                                    </RegularText>
+                                  </Row2>
+                                  <Row2>
+                                    <HeaderText>
+                                      Next Assessment Date
+                                    </HeaderText>
+                                    <RegularText>
+                                      {activeBusiness.nextAssessmentDate}
+                                    </RegularText>
                                   </Row2>
                                 </CardContentWrapper>
                               </Column>
@@ -1063,50 +1090,9 @@ export default function CustomerDetails() {
                       <Row>
                         <Container3>
                           <Card5>
-                            <TableWrapper>
-                              <table
-                                {...getTableProps()}
-                                style={{ border: "none" }}
-                              >
-                                <thead>
-                                  {headerGroups.map((headerGroup) => (
-                                    <tr {...headerGroup.getHeaderGroupProps()}>
-                                      {headerGroup.headers.map((column) => (
-                                        <th
-                                          {...column.getHeaderProps()}
-                                          style={{ border: "none" }}
-                                        >
-                                          {column.render("Header")}
-                                        </th>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </thead>
-                                <tbody {...getTableBodyProps()}>
-                                  {rows.map((row) => {
-                                    prepareRow(row);
-                                    return (
-                                      <tr {...row.getRowProps()}>
-                                        {row.cells.map((cell) => {
-                                          return (
-                                            <td
-                                              {...cell.getCellProps()}
-                                              style={{
-                                                borderBottom:
-                                                  "1px solid rgba(0,0,0,0.1)",
-                                                borderRight: "none",
-                                              }}
-                                            >
-                                              {cell.render("Cell")}
-                                            </td>
-                                          );
-                                        })}
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </TableWrapper>
+                            <TransactionCardContent>
+                              <Table data={activeBusiness.transactions} />
+                            </TransactionCardContent>
                           </Card5>
                         </Container3>
                       </Row>
@@ -1404,7 +1390,7 @@ const RegularText = styled.p`
   font-size: 12px;
   width: 100%;
   word-wrap: break-word;
-  ${'' /* word-break: break-all; */}
+  ${"" /* word-break: break-all; */}
   margin-bottom: 5px;
 `;
 const HeaderText2 = styled.p`
@@ -1546,8 +1532,8 @@ const CountryTab = styled.p`
   color: ${({ active }) => (active ? "#644ae5" : "#747474")};
   cursor: pointer;
   font-weight: 700;
-  font-size:12px;
-  padding: 0 10px
+  font-size: 12px;
+  padding: 0 10px;
 `;
 const LineWrapper = styled.div`
   display: flex;
