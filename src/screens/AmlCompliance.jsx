@@ -14,6 +14,8 @@ import TopNavbar from "../components/Nav/TopNavbar";
 export default function AmlCompliance() {
   const [isLoading, setIsLoading] = useState(true);
   const [score, setScore] = useState(0);
+  const [riskCategory, setRiskCategory] = useState("");
+  const [averageScore, setAverageScore] = useState(0);
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const accountId = params.get("accountid");
@@ -68,6 +70,12 @@ export default function AmlCompliance() {
         if (response.data.isSuccessful === true) {
           setCustomerDetails(response.data.returnedObjects);
           setScore(response.data.returnedObjects.customerInfoObject.riskScore);
+          setAverageScore(
+            response.data.returnedObjects.customerInfoObject.avgRiskScore
+          );
+          setRiskCategory(
+            response.data.returnedObjects.customerInfoObject.riskCategory
+          );
         } else {
           toast.error(response.data.responseMessage, {
             position: "top-right",
@@ -234,15 +242,15 @@ export default function AmlCompliance() {
                   color:
                     item.status === "Passed"
                       ? "#0DAE0A"
-                      : item.status === "Review"
-                      ? "#AE800A"
-                      : "#AE0A0A",
+                      : item.status === "MLRO Approval"
+                      ? "#AE0A0A"
+                      : "#AE800A",
                   backgroundColor:
                     item.status === "Passed"
                       ? "rgba(13, 174, 10, 0.5)"
-                      : item.status === "Review"
-                      ? "rgba(174, 128, 10, 0.5)"
-                      : "rgba(174, 10, 10, 0.5)",
+                      : item.status === "MLRO Approval"
+                      ? "rgba(174, 10, 10, 0.5)"
+                      : "rgba(174, 128, 10, 0.5)",
                   padding: "3px",
                   borderRadius: "5px",
                   width: "60%",
@@ -270,8 +278,32 @@ export default function AmlCompliance() {
         <tr style={{ borderBottom: "none" }}>
           <td style={{ border: "none" }}></td>
           <td style={{ border: "none" }}></td>
-          <td style={{ border: "none" }}></td>
-          <td style={{ border: "none" }}></td>
+          <td
+            style={{
+              textAlign: "center",
+              fontSize: "12px",
+              fontWeight: "bold",
+              color: "#000000",
+              textAlign: "center",
+              height: "40px",
+              verticalAlign: "middle",
+            }}
+          >
+            Risk Category
+          </td>
+          <td
+            style={{
+              textAlign: "center",
+              fontSize: "12px",
+              fontWeight: "bold",
+              color: "#000000",
+              textAlign: "center",
+              height: "40px",
+              verticalAlign: "middle",
+            }}
+          >
+            {riskCategory}
+          </td>
           <td
             style={{
               textAlign: "center",
@@ -428,7 +460,9 @@ export default function AmlCompliance() {
                         {customerDetails.customerInfoObject.countryOfOrigin}
                       </p>
                     </VerticalWrapper>
-                    <VerticalWrapper style={{ alignItems: "start", flex: 2, padding:'0px' }}>
+                    <VerticalWrapper
+                      style={{ alignItems: "start", flex: 2, padding: "0px" }}
+                    >
                       <p
                         style={{
                           color: "#676767",
@@ -445,25 +479,25 @@ export default function AmlCompliance() {
                         <HundredMark>100</HundredMark>
                         <Score
                           color={
-                            score <= 30
+                            averageScore <= 30
                               ? "#5FC163"
-                              : score <= 70
+                              : averageScore <= 70
                               ? "#EAC040"
                               : "#E54A4A"
                           }
-                          value={score}
+                          value={averageScore}
                         />
                         <ScoreLabel
                           color={
-                            score <= 30
+                            averageScore <= 30
                               ? "#5FC163"
-                              : score <= 70
+                              : averageScore <= 70
                               ? "#EAC040"
                               : "#E54A4A"
                           }
-                          value={score}
+                          value={averageScore}
                         >
-                          {score}
+                          {averageScore}
                         </ScoreLabel>
                       </Ruler>
                     </VerticalWrapper>
@@ -587,7 +621,15 @@ const Ruler = styled.div`
   height: 5px;
   position: relative;
   border-radius: 5px;
-  background: linear-gradient(to right, #5fc163 0%, #5fc163 30%, #eac040 30%, #eac040 70%, #e54a4a 70%, #e54a4a 100%);
+  background: linear-gradient(
+    to right,
+    #5fc163 0%,
+    #5fc163 30%,
+    #eac040 30%,
+    #eac040 70%,
+    #e54a4a 70%,
+    #e54a4a 100%
+  );
 `;
 const RulerMark = styled.div`
   position: absolute;

@@ -1,6 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import styled, { css } from "styled-components";
 import { ExportCircle, Clock } from "iconsax-react";
+import api from "../api";
+import { ToastContainer, toast } from "react-toastify";
+import PuffLoader from "react-spinners/PuffLoader";
+import {
+  formatNumber,
+  parseAndFormatDate,
+  formatDateTime,
+} from "../utilities/numUtils.js";
 import { useTable } from "react-table";
 import { DateRangePicker } from "react-date-range";
 import { format, startOfMonth } from "date-fns";
@@ -11,19 +19,215 @@ import useOutsideClick from "./UseOutsideClicks";
 //Sections
 import TopNavbar from "../components/Nav/TopNavbar";
 
-const createTableData = (length = 20) => {
-  return Array.from({ length }, (_, index) => {
-    return {
-      col1: `Column 1 Row ${index + 1}`,
-      col2: `Column 2 Row ${index + 1}`,
-      col3: `Column 3 Row ${index + 1}`,
-      col4: `Column 4 Row ${index + 1}`,
-      col5: `Column 5 Row ${index + 1}`,
-    };
-  });
-};
+const Table = ({ data }) => (
+  <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+  <colgroup>
+      <col style={{ width: "20%" }} />
+      <col style={{ width: "15%" }} />
+      <col style={{ width: "15%" }} />
+      <col style={{ width: "12%" }} />
+      <col style={{ width: "20%" }} />
+    </colgroup>
+    <thead>
+      <tr>
+        <th
+          style={{
+            color: "rgba(0, 0, 0, 0.6)", // #000000 with 60% opacity
+            borderBottom: "1px solid #C2C2C2",
+            textAlign: "left",
+            height: "60px",
+            verticalAlign: "middle",
+            fontSize: "14px",
+          }}
+        >
+          Transaction
+        </th>
+        <th
+          style={{
+            color: "rgba(0, 0, 0, 0.6)", // #000000 with 60% opacity
+            borderBottom: "1px solid #C2C2C2",
+            textAlign: "left",
+            height: "60px",
+            verticalAlign: "middle",
+            fontSize: "14px",
+          }}
+        >
+          Category
+        </th>
+        <th
+          style={{
+            color: "rgba(0, 0, 0, 0.6)", // #000000 with 60% opacity
+            borderBottom: "1px solid #C2C2C2",
+            textAlign: "left",
+            height: "60px",
+            verticalAlign: "middle",
+            fontSize: "14px",
+          }}
+        >
+          Amount
+        </th>
+        <th
+          style={{
+            color: "rgba(0, 0, 0, 0.6)", // #000000 with 60% opacity
+            borderBottom: "1px solid #C2C2C2",
+            textAlign: "center",
+            height: "60px",
+            verticalAlign: "middle",
+            fontSize: "14px",
+          }}
+        >
+          Status
+        </th>
+        <th
+          style={{
+            color: "rgba(0, 0, 0, 0.6)", // #000000 with 60% opacity
+            borderBottom: "1px solid #C2C2C2",
+            textAlign: "left",
+            height: "60px",
+            verticalAlign: "middle",
+            fontSize: "14px",
+            paddingLeft: "50px",
+          }}
+        >
+          Date
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {data.map((item, index) => (
+        <tr key={index} style={{ borderBottom: "1px solid #C2C2C2" }}>
+          <td
+            style={{
+              color: "#000",
+              textAlign: "left",
+              height: "40px",
+              verticalAlign: "middle",
+              fontSize: "12px",
+              wordWrap: "break-word",
+            }}
+          >
+            {`${item.receiverAccountName}`}
+          </td>
+          <td
+            style={{
+              color: "#000",
+              textAlign: "left",
+              height: "40px",
+              verticalAlign: "middle",
+              fontSize: "12px",
+            }}
+          >
+            {item.paymentOption}
+          </td>
+          <td
+            style={{
+              color: "#000",
+              textAlign: "left",
+              height: "40px",
+              verticalAlign: "middle",
+              fontSize: "12px",
+            }}
+          >
+            {`${formatNumber(item.amount, item.currency)}`}
+          </td>
+          <td
+            style={{
+              textAlign: "center",
+              height: "40px",
+              verticalAlign: "middle",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <div
+              style={{
+                color:
+                  item.transactionStatus === "Completed"
+                    ? "#0DAE0A"
+                    : item.transactionStatus === "Pending"
+                    ? "#AE800A"
+                    : "#AE0A0A",
+                backgroundColor:
+                  item.transactionStatus === "Completed"
+                    ? "rgba(13, 174, 10, 0.5)"
+                    : item.transactionStatus === "Pending"
+                    ? "rgba(174, 128, 10, 0.5)"
+                    : "rgba(174, 10, 10, 0.5)",
+                padding: "3px",
+                borderRadius: "5px",
+                width: "60%",
+                textAlign: "center",
+                fontSize: "12px",
+                fontWeight: "bold",
+              }}
+            >
+              {item.transactionStatus}
+            </div>
+          </td>
+          <td
+            style={{
+              color: "#000",
+              textAlign: "left",
+              height: "40px",
+              verticalAlign: "middle",
+              fontSize: "12px",
+              paddingLeft: "50px",
+            }}
+          >
+            {`${formatDateTime(item.initiatedOn)}`}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+);
 
 export default function Transactions() {
+  const [transactions, setTransactions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingList, setIsLoadingList] = useState(true);
+  const [countryCode, setCountryCode] = useState("gb");
+  useEffect(() => {
+    getTransactions(countryCode);
+  }, []);
+
+  const getTransactions = async (code) => {
+    await api
+      .get(`/api/v2/insight/recent-transactions/${code}`, {
+        headers: {
+          accept: "*/*",
+          "X-Auth-Signature": `179C050B170DAB3BEBB98603BD05FB47EE846336F5324FC6D9C34E82792A215EB65A6BC60BB7FEA38CD6389BF4E533E01B753A9787AA7E8E62FC6FA7B018B33C`,
+          "Content-Type": "application/json",
+        },
+      })
+      .then((response) => {
+        // console.log(response);
+        if (response.data.isSuccessful === true) {
+          setTransactions(response.data.returnedObjects);
+        } else {
+          toast.error(response.data.responseMessage, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            style: {
+              backgroundColor: "#f44336",
+              color: "#fff",
+            },
+          });
+        }
+        setIsLoadingList(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setIsLoading(false);
+      });
+  };
   const ref = useRef();
   useOutsideClick(ref, () => {
     if (isDatePickerOpen) {
@@ -50,40 +254,10 @@ export default function Transactions() {
   const handleClick = (column) => {
     setActiveColumn(column);
   };
-  const tableData = useMemo(() => createTableData(), []);
-  const tableColumns = useMemo(
-    () => [
-      {
-        Header: "Transaction",
-        accessor: "col1", // accessor is the "key" in the data
-      },
-      {
-        Header: "Category",
-        accessor: "col2",
-      },
-      {
-        Header: "Amount",
-        accessor: "col3",
-      },
-      {
-        Header: "Status",
-        accessor: "col4",
-      },
-      {
-        Header: "Date",
-        accessor: "col5",
-      },
-    ],
-    []
-  );
-  const tableInstance = useTable({ columns: tableColumns, data: tableData });
-
-  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
-    tableInstance;
   return (
     <>
       <TopNavbar />
-
+      <ToastContainer />
       <ScrollableContainer>
         <ResponsiveWrapper>
           <LeftColumn>
@@ -150,46 +324,17 @@ export default function Transactions() {
               </div>
               <div></div>
               <TransactionCardContent>
-                <TableWrapper>
-                  <table {...getTableProps()} style={{ border: "none" }}>
-                    <thead>
-                      {headerGroups.map((headerGroup) => (
-                        <tr {...headerGroup.getHeaderGroupProps()}>
-                          {headerGroup.headers.map((column) => (
-                            <th
-                              {...column.getHeaderProps()}
-                              style={{ border: "none" }}
-                            >
-                              {column.render("Header")}
-                            </th>
-                          ))}
-                        </tr>
-                      ))}
-                    </thead>
-                    <tbody {...getTableBodyProps()}>
-                      {rows.map((row) => {
-                        prepareRow(row);
-                        return (
-                          <tr {...row.getRowProps()}>
-                            {row.cells.map((cell) => {
-                              return (
-                                <td
-                                  {...cell.getCellProps()}
-                                  style={{
-                                    borderBottom: "1px solid rgba(0,0,0,0.1)",
-                                    borderRight: "none",
-                                  }}
-                                >
-                                  {cell.render("Cell")}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </TableWrapper>
+                {isLoadingList ? (
+                  <LoaderContainer>
+                    <PuffLoader
+                      color="#644AE5"
+                      loading={isLoadingList}
+                      size={200}
+                    />
+                  </LoaderContainer>
+                ) : (
+                  <Table data={transactions} />
+                )}
               </TransactionCardContent>
             </TransactionsCard>
           </LeftColumn>
@@ -340,7 +485,7 @@ const TableWrapper = styled.div`
       padding: 0.5rem;
       border-bottom: 1px solid black;
       border-right: 1px solid black;
-      padding-top: 20px; 
+      padding-top: 20px;
       font-size: 12px;
       text-align: center;
       :last-child {
@@ -352,6 +497,7 @@ const TableWrapper = styled.div`
 const TransactionCardContent = styled.div`
   height: 90%;
   overflow-y: auto;
+  padding: 35px;
 
   &::-webkit-scrollbar {
     width: 5px;
@@ -368,7 +514,7 @@ const TransactionCardContent = styled.div`
 `;
 const TransactionsCard = styled(Card)`
   height: 70vh;
-  padding: 15px 15px;
+  padding: 25px 25px;
 
   @media (max-width: 760px) {
     height: 60vh;
@@ -406,4 +552,10 @@ const DateFilterRow = styled.div`
   display: flex;
   justify-content: flex-end;
   position: relative;
+`;
+const LoaderContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
 `;

@@ -23,7 +23,7 @@ function parseDate(dateString) {
   return `${parts[2]}-${parts[1]}-${parts[0]}`;
 }
 
-function formatDateTime(date) {
+export function formatDateTime(date) {
   const options = {
     year: "numeric",
     month: "short",

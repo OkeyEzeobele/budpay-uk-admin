@@ -69,9 +69,9 @@ export default function Customers() {
   };
   const getCustomerDetails = async () => {
     let data = {
-      channel: 61,
+      channel: 1,
       ipAddress: "string",
-      actor: 78,
+      actor: 61,
       deviceId: "string",
       browser: "string",
       accountId: 0,

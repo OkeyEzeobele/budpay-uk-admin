@@ -637,7 +637,7 @@ export default function Landing() {
   });
   return (
     <>
-      <TopNavbar />
+      <TopNavbar/>
       <ToastContainer />
       <ScrollableContainer>
         <ResponsiveWrapper>

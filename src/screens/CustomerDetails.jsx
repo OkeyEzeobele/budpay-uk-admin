@@ -327,12 +327,14 @@ export default function CustomerDetails() {
                 <Card1 backgroundColor="#f8fbff">
                   <UserDetails>
                     <ProfileWrapper>
-                      {/* <Profile size={50} variant="Bold" /> */}
-                      <img
-                        src={customerDetails.customerInfo.selfie}
-                        alt={customerDetails.customerInfo.customerName}
-                      />
+                      <ImageWrapper>
+                        <img
+                          src={customerDetails.customerInfo.selfie}
+                          alt={customerDetails.customerInfo.customerName}
+                        />
+                      </ImageWrapper>
                     </ProfileWrapper>
+                    {/* <ProfileWrapper image={customerDetails.customerInfo.selfie} /> */}
                     <AvatarSection>
                       <h3>{customerDetails.customerInfo.customerName}</h3>
                       <p>{customerDetails.customerInfo.emailAddress}</p>
@@ -1363,10 +1365,28 @@ const ProfileWrapper = styled.div`
   justify-content: center;
   align-items: center;
   background-color: #eef3fe;
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-
+  ${
+    "" /* background-image: url(${(props) => props.image});
+  background-size: cover;
+  background-position: center; */
+  }
+  @media (max-width: 760px) {
+    margin-top: 1rem;
+  }
+`;
+const ImageWrapper = styled.div`
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
   @media (max-width: 760px) {
     margin-top: 1rem;
   }
